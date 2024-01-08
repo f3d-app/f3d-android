@@ -3,12 +3,12 @@ plugins {
 }
 
 android {
-    compileSdk 32
+    compileSdk 33
 
     defaultConfig {
         applicationId "io.github.f3d_app.android"
         minSdk 27
-        targetSdk 32
+        targetSdk 33
         versionCode 1
         versionName "1.0"
     }
@@ -26,6 +26,7 @@ android {
     buildFeatures {
         viewBinding true
     }
+    namespace 'io.github.f3d_app.android'
 }
 
 dependencies {
