@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="io.github.f3d_app.android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
     <application
         android:allowBackup="true"
@@ -10,7 +9,7 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.F3D">
         <activity
-            android:name="io.github.f3d_app.android.MainActivity"
+            android:name="app.f3d.F3D.android.MainActivity"
             android:configChanges="keyboardHidden|orientation|screenSize"
             android:launchMode="singleTask"
             android:exported="true">

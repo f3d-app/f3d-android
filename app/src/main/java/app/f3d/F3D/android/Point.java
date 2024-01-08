@@ -1,4 +1,4 @@
-package io.github.f3d_app.android;
+package app.f3d.F3D.android;
 
 /**
  * Provides a simple implementation of a two-dimensional point with floats.

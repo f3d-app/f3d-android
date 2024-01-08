@@ -1,25 +1,22 @@
-package io.github.f3d_app.android;
+package app.f3d.F3D.android;
 
 import android.content.Context;
 import android.opengl.GLSurfaceView;
+import android.util.Log;
 import android.view.MotionEvent;
 import android.view.ScaleGestureDetector;
 
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
 
-import io.github.f3d_app.f3d.*;
+import app.f3d.F3D.*;
 
 public class MainView extends GLSurfaceView {
-    private static String TAG = "F3DMainView";
-
     private Engine mEngine;
 
-    private Renderer mRenderer;
-
-    private ScaleGestureDetector mScaleDetector;
-    private PanGestureDetector mPanDetector;
-    private RotateGestureDetector mRotateDetector;
+    final private ScaleGestureDetector mScaleDetector;
+    final private PanGestureDetector mPanDetector;
+    final private RotateGestureDetector mRotateDetector;
 
     public MainView(Context context) {
         super(context);
@@ -35,9 +32,13 @@ public class MainView extends GLSurfaceView {
         setEGLConfigChooser(8, 8, 8, 0, 16, 0);
         setEGLContextClientVersion(3);
 
-        this.mRenderer = new Renderer();
-        this.setRenderer(mRenderer);
+        this.setRenderer(new Renderer());
         this.setRenderMode(RENDERMODE_WHEN_DIRTY);
+    }
+
+    public void openBuffer(String buffer, String mimeType) {
+        // @TODO: to implement in C++ and expose the API
+        Log.e("Not implemented yet in F3D: open with mimetype=", mimeType);
     }
 
     private class Renderer implements GLSurfaceView.Renderer {
@@ -52,22 +53,21 @@ public class MainView extends GLSurfaceView {
         }
 
         public void onSurfaceCreated(GL10 gl, EGLConfig config) {
-            MainView.this.mEngine = new Engine(Window.Type.NATIVE);
+            Engine.autoloadPlugins();
+
+            MainView.this.mEngine = new Engine();
+
+            MainView.this.mEngine.setCachePath(MainView.this.getContext().getCacheDir().getAbsolutePath());
 
             MainView.this.mEngine.getOptions().toggle("interactor.axis");
-            MainView.this.mEngine.getOptions().toggle("render.grid");
-            MainView.this.mEngine.getOptions().toggle("render.effect.fxaa");
+            MainView.this.mEngine.getOptions().toggle("render.grid.enable");
+            MainView.this.mEngine.getOptions().toggle("render.effect.anti-aliasing");
             MainView.this.mEngine.getOptions().toggle("render.effect.tone-mapping");
             MainView.this.mEngine.getOptions().toggle("ui.filename");
             MainView.this.mEngine.getOptions().toggle("ui.loader-progress");
 
-            MainView.this.mEngine.getLoader().addFile("/data/local/tmp/WaterBottle.glb");
-            MainView.this.mEngine.getLoader().addFile("/data/local/tmp/MetalRoughSpheresNoTextures.glb");
-            MainView.this.mEngine.getLoader().addFile("/data/local/tmp/MetalRoughSpheres.glb");
-            MainView.this.mEngine.getLoader().addFile("/data/local/tmp/CesiumMan.glb");
-            MainView.this.mEngine.getLoader().addFile("/data/local/tmp/BoxTextured.glb");
-
-            MainView.this.mEngine.getLoader().loadFile(Loader.LoadFileEnum.LOAD_FIRST);
+            // hard-coded path, change it
+            MainView.this.mEngine.getLoader().loadGeometry("/data/local/tmp/WaterBottle.glb");
         }
     }
 
@@ -82,7 +82,7 @@ public class MainView extends GLSurfaceView {
 
     private class PanListener extends PanGestureDetector.OnPanGestureListener {
         @Override
-        public boolean onPan(PanGestureDetector detector) {
+        public void onPan(PanGestureDetector detector) {
 
             Window window = MainView.this.mEngine.getWindow();
             Camera camera = window.getCamera();
@@ -100,14 +100,12 @@ public class MainView extends GLSurfaceView {
             camera.setPosition(new double[] { motion[0] + pos[0], motion[1] + pos[1], motion[2] + pos[2] });
 
             window.render();
-
-            return true;
         }
     }
 
     private class RotateListener extends RotateGestureDetector.OnRotateGestureListener {
         @Override
-        public boolean onRotate(RotateGestureDetector detector) {
+        public void onRotate(RotateGestureDetector detector) {
 
             Window window = MainView.this.mEngine.getWindow();
             Camera camera = window.getCamera();
@@ -119,41 +117,17 @@ public class MainView extends GLSurfaceView {
             camera.elevation(detector.getDistanceY() * delta_elevation);
 
             window.render();
-            return true;
         }
     }
 
     // forward events to rendering thread for it to handle
     public boolean onTouchEvent(MotionEvent event) {
-        queueEvent(new Runnable() {
-            public void run() {
+        queueEvent(() -> {
                 mPanDetector.onTouchEvent(event);
                 mScaleDetector.onTouchEvent(event);
                 mRotateDetector.onTouchEvent(event);
             }
-        });
-
-        return true;
-    }
-
-    public boolean loadPrevious() {
-        queueEvent(new Runnable() {
-            public void run() {
-                MainView.this.mEngine.getLoader().loadFile(Loader.LoadFileEnum.LOAD_PREVIOUS);
-                MainView.this.mEngine.getWindow().render();
-            }
-        });
-
-        return true;
-    }
-
-    public boolean loadNext() {
-        queueEvent(new Runnable() {
-            public void run() {
-                MainView.this.mEngine.getLoader().loadFile(Loader.LoadFileEnum.LOAD_NEXT);
-                MainView.this.mEngine.getWindow().render();
-            }
-        });
+        );
 
         return true;
     }

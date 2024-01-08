@@ -1,4 +1,4 @@
-package io.github.f3d_app.android;
+package app.f3d.F3D.android;
 
 import android.view.MotionEvent;
 
@@ -12,7 +12,7 @@ public class PanGestureDetector {
     private int mPointerId1, mPointerId2;
     private float mXDistance, mYDistance;
 
-    private OnPanGestureListener mGestureListener;
+    private final OnPanGestureListener mGestureListener;
 
     /**
      * Constructor.
@@ -50,9 +50,8 @@ public class PanGestureDetector {
      * Processes a touch motion event and calculates the panning gesture.
      *
      * @param event The motion event that occurred.
-     * @return Whether the touch was consumed.
      */
-    public boolean onTouchEvent(final MotionEvent event) {
+    public void onTouchEvent(final MotionEvent event) {
         switch (event.getActionMasked()) {
             case MotionEvent.ACTION_DOWN:
                 mPointerId1 = event.getPointerId(event.getActionIndex());
@@ -95,7 +94,6 @@ public class PanGestureDetector {
                 }
                 break;
         }
-        return true;
     }
 
     private void unpackLinePosition(final MotionEvent event, final Line line) {
@@ -129,9 +127,8 @@ public class PanGestureDetector {
          * Called on receipt of a motion event when a pan is detected.
          *
          * @param detector The pan gesture detector.
-         * @return Whether the touch was consumed.
          */
-        boolean onPan(PanGestureDetector detector) {
+        void onPan(PanGestureDetector detector) {
             throw new RuntimeException("Not implemented!");
         }
     }

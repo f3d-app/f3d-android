@@ -1,4 +1,4 @@
-package io.github.f3d_app.android;
+package app.f3d.F3D.android;
 
 /**
  * Provides a simple implementation of a line with two points.
@@ -11,17 +11,6 @@ public class Line {
 	 */
 	public Line() {
 		this(new Point(), new Point());
-	}
-
-	/**
-	 * Constructor that creates points based off of specified coordinates.
-	 * @param x1 The x coordinate of the first point.
-	 * @param y1 The y coordinate of the first point.
-	 * @param x2 The x coordinate of the second point.
-	 * @param y2 The y coordinate of the second point.
-	 */
-	public Line(final float x1, final float y1, final float x2, final float y2) {
-		this(new Point(x1, y1), new Point(x2, y2));
 	}
 
 	/**
@@ -40,22 +29,6 @@ public class Line {
 	 */
 	public Point getCenter() {
 		return new Point((getX1() + getX2()) / 2, (getY1() + getY2()) / 2);
-	}
-
-	/**
-	 * Gets the first point of the line.
-	 * @return The first point of the line.
-	 */
-	public Point getPoint1() {
-		return mPoint1;
-	}
-
-	/**
-	 * Gets the second point of the line.
-	 * @return The second point of the line.
-	 */
-	public Point getPoint2() {
-		return mPoint2;
 	}
 
 	/**

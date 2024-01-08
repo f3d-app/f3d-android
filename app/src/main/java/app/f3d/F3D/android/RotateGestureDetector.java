@@ -1,4 +1,4 @@
-package io.github.f3d_app.android;
+package app.f3d.F3D.android;
 
 import android.view.MotionEvent;
 
@@ -11,7 +11,7 @@ public class RotateGestureDetector {
     private float mLastTouchX, mLastTouchY;
     private float mDistanceX, mDistanceY;
 
-    private OnRotateGestureListener mGestureListener;
+    private final OnRotateGestureListener mGestureListener;
 
     /**
      * Constructor.
@@ -49,9 +49,8 @@ public class RotateGestureDetector {
      * Processes a touch motion event and calculates the rotation gesture.
      *
      * @param event The motion event that occurred.
-     * @return Whether the touch was consumed.
      */
-    public boolean onTouchEvent(final MotionEvent event) {
+    public void onTouchEvent(final MotionEvent event) {
         switch (event.getActionMasked()) {
             case MotionEvent.ACTION_DOWN: {
                 mPointerId = event.getPointerId(event.getActionIndex());
@@ -83,8 +82,6 @@ public class RotateGestureDetector {
                 break;
             }
         }
-
-        return true;
     }
 
     /**
@@ -95,9 +92,8 @@ public class RotateGestureDetector {
          * Called on receipt of a motion event when a pan is detected.
          *
          * @param detector The pan gesture detector.
-         * @return Whether the touch was consumed.
          */
-        boolean onRotate(RotateGestureDetector detector) {
+        void onRotate(RotateGestureDetector detector) {
             throw new RuntimeException("Not implemented!");
         }
     }
