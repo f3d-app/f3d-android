@@ -63,11 +63,13 @@ public class MainView extends GLSurfaceView {
             MainView.this.mEngine.getOptions().toggle("render.grid.enable");
             MainView.this.mEngine.getOptions().toggle("render.effect.anti-aliasing");
             MainView.this.mEngine.getOptions().toggle("render.effect.tone-mapping");
+            MainView.this.mEngine.getOptions().toggle("render.hdri.ambient");
+            MainView.this.mEngine.getOptions().toggle("render.background.skybox");
             MainView.this.mEngine.getOptions().toggle("ui.filename");
             MainView.this.mEngine.getOptions().toggle("ui.loader-progress");
 
             // hard-coded path, change it
-            MainView.this.mEngine.getLoader().loadGeometry("/data/local/tmp/WaterBottle.glb");
+            MainView.this.mEngine.getLoader().loadScene("/data/local/tmp/WaterBottle.glb");
         }
     }
 
