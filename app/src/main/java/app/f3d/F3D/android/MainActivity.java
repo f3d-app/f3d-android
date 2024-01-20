@@ -4,28 +4,48 @@ import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
 import android.util.Log;
-import android.app.Activity;
-
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
+import androidx.appcompat.app.AppCompatActivity;
 import androidx.constraintlayout.widget.ConstraintLayout;
-
+import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 
-public class MainActivity extends Activity {
+public class MainActivity extends AppCompatActivity {
 
     MainView mView;
+
+    FloatingActionButton addButton;
+
+    private final ActivityResultLauncher<String> getContentLauncher = registerForActivityResult(
+            new ActivityResultContracts.GetContent(),
+            result -> {
+                if (result != null) {
+                    // Handle the selected file URI
+                    handleSelectedFile(result);
+                }
+            }
+    );
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
 
         super.onCreate(savedInstanceState);
 
-        mView = new MainView(this);
-
         this.setContentView(R.layout.activity_main);
 
         ConstraintLayout mainLayout = findViewById(R.id.mainLayout);
+
+        addButton = findViewById(R.id.addButton);
+
+        addButton.setOnClickListener(view -> {
+            openFilePicker();
+        });
+
+        mView = new MainView(this);
+
         mainLayout.addView(mView);
     }
 
@@ -65,6 +85,15 @@ public class MainActivity extends Activity {
     {
         super.onResume();
         this.mView.onResume();
+    }
+
+    private void openFilePicker() {
+        getContentLauncher.launch("*/*"); // Specify the MIME type if needed
+    }
+
+    private void handleSelectedFile(Uri uri) {
+        String filePath = FileUtils.createTempFileFromUri(this,uri);
+        mView.updateFilePath(filePath);
     }
 
 }

@@ -18,9 +18,10 @@ public class MainView extends GLSurfaceView {
     final private PanGestureDetector mPanDetector;
     final private RotateGestureDetector mRotateDetector;
 
+    private String path = "";
+
     public MainView(Context context) {
         super(context);
-
         start();
 
         this.mScaleDetector = new ScaleGestureDetector(context, new ScaleListener());
@@ -68,9 +69,14 @@ public class MainView extends GLSurfaceView {
             MainView.this.mEngine.getOptions().toggle("ui.filename");
             MainView.this.mEngine.getOptions().toggle("ui.loader-progress");
 
-            // hard-coded path, change it
-            MainView.this.mEngine.getLoader().loadScene("/data/local/tmp/WaterBottle.glb");
+            if(path != "") {
+                MainView.this.mEngine.getLoader().loadScene(path);
+            }
         }
+    }
+    public void updateFilePath(String newFilePath) {
+        // Use the new file path as needed in MainView
+        path = newFilePath;
     }
 
     private class ScaleListener extends ScaleGestureDetector.SimpleOnScaleGestureListener {
