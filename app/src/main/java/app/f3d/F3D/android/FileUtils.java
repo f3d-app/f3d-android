@@ -54,10 +54,28 @@ public class FileUtils {
         return nameAndExtension;
     }
 
+//    private static File createTempFile(Context context, String name, String extension) throws IOException {
+//        File cacheDir = context.getCacheDir();
+//        return new File(cacheDir, name + "-temp." + extension);
+//    }
+
     private static File createTempFile(Context context, String name, String extension) throws IOException {
-        File cacheDir = context.getCacheDir();
-        return new File(cacheDir, name + "-temp." + extension);
+        // Get the external cache directory or another suitable directory
+        File externalCacheDir = context.getExternalCacheDir();
+
+        // Check if the external cache directory is available, otherwise, use the internal cache directory
+        File cacheDir = (externalCacheDir != null) ? externalCacheDir : context.getCacheDir();
+
+        // Create a subdirectory named "f3d" within the cache directory
+        File f3dDir = new File(cacheDir, "f3d");
+        if (!f3dDir.exists()) {
+            f3dDir.mkdirs(); // Create the directory if it doesn't exist
+        }
+
+        // Create the temporary file within the "f3d" directory
+        return new File(f3dDir, name + "." + extension);
     }
+
 
     private static String getFileNameFromUri(ContentResolver contentResolver, Uri uri) {
         String fileName = null;

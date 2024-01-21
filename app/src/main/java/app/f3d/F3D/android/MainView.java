@@ -6,6 +6,8 @@ import android.util.Log;
 import android.view.MotionEvent;
 import android.view.ScaleGestureDetector;
 
+import java.util.Objects;
+
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
 
@@ -69,7 +71,7 @@ public class MainView extends GLSurfaceView {
             MainView.this.mEngine.getOptions().toggle("ui.filename");
             MainView.this.mEngine.getOptions().toggle("ui.loader-progress");
 
-            if(path != "") {
+            if(!Objects.equals(path, "")) {
                 MainView.this.mEngine.getLoader().loadScene(path);
             }
         }

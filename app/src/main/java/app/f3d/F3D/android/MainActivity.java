@@ -1,5 +1,6 @@
 package app.f3d.F3D.android;
 
+import android.app.ActionBar;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
@@ -12,18 +13,16 @@ import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Objects;
 
 public class MainActivity extends AppCompatActivity {
 
-    MainView mView;
-
-    FloatingActionButton addButton;
+    private MainView mView;
 
     private final ActivityResultLauncher<String> getContentLauncher = registerForActivityResult(
             new ActivityResultContracts.GetContent(),
             result -> {
                 if (result != null) {
-                    // Handle the selected file URI
                     handleSelectedFile(result);
                 }
             }
@@ -33,62 +32,36 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
 
         super.onCreate(savedInstanceState);
-
-        this.setContentView(R.layout.activity_main);
+        setContentView(R.layout.activity_main);
 
         ConstraintLayout mainLayout = findViewById(R.id.mainLayout);
 
-        addButton = findViewById(R.id.addButton);
+        FloatingActionButton addButton = findViewById(R.id.addButton);
+
+        Objects.requireNonNull(getSupportActionBar()).hide();
 
         addButton.setOnClickListener(view -> {
-            openFilePicker();
+            getContentLauncher.launch("*/*");
         });
 
         mView = new MainView(this);
 
+        handleSelectedFileAppNotOpen();
+
         mainLayout.addView(mView);
     }
 
-    @Override protected void onNewIntent(Intent intent) {
-        super.onNewIntent(intent);
-        Uri uri = intent.getData();
-        if (uri != null) {
-            try (InputStream inputStream = getContentResolver().openInputStream(uri)) {
-                int code;
-                StringBuilder sb = new StringBuilder();
-                while((code = inputStream.read()) != -1) {
-                    sb.append((char)code);
-                }
-
-                mView.openBuffer(sb.toString(), intent.getType());
-
-                Log.e("ACTIVITY", "Content= " + sb);
-            }
-            catch(FileNotFoundException e)
-            {
-                Log.e("ACTIVITY", "No file " + uri + ": " + e);
-            }
-            catch(IOException e)
-            {
-                Log.e("ACTIVITY", "IO exception " + uri + ": " + e);
-            }
-        }
-    }
 
     @Override protected void onPause()
     {
         super.onPause();
-        this.mView.onPause();
+        mView.onPause();
     }
 
     @Override protected void onResume()
     {
         super.onResume();
-        this.mView.onResume();
-    }
-
-    private void openFilePicker() {
-        getContentLauncher.launch("*/*"); // Specify the MIME type if needed
+        mView.onResume();
     }
 
     private void handleSelectedFile(Uri uri) {
@@ -96,4 +69,11 @@ public class MainActivity extends AppCompatActivity {
         mView.updateFilePath(filePath);
     }
 
+    private void handleSelectedFileAppNotOpen(){
+        Intent intent = getIntent();
+        if (intent != null && intent.getData() != null) {
+            Uri uri = intent.getData();
+            handleSelectedFile(uri);
+        }
+    }
 }
