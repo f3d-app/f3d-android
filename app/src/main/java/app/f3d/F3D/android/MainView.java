@@ -20,7 +20,8 @@ public class MainView extends GLSurfaceView {
     final private PanGestureDetector mPanDetector;
     final private RotateGestureDetector mRotateDetector;
 
-    private String path = "";
+    private String internalCachePath = "";
+    private boolean useGeometryFlag = true;
 
     public MainView(Context context) {
         super(context);
@@ -70,15 +71,21 @@ public class MainView extends GLSurfaceView {
             MainView.this.mEngine.getOptions().toggle("render.background.skybox");
             MainView.this.mEngine.getOptions().toggle("ui.filename");
             MainView.this.mEngine.getOptions().toggle("ui.loader-progress");
+//            MainView.this.mEngine.getOptions().toggle("model.volume.enable");
 
-            if(!Objects.equals(path, "")) {
-                MainView.this.mEngine.getLoader().loadScene(path);
+            if(!Objects.equals(internalCachePath, "")) {
+                if(useGeometryFlag){
+                    MainView.this.mEngine.getLoader().loadGeometry(internalCachePath);
+                }else{
+                    MainView.this.mEngine.getLoader().loadScene(internalCachePath);
+                }
             }
         }
     }
-    public void updateFilePath(String newFilePath) {
+    public void updateFilePath(String newFilePath, boolean useGeometry) {
         // Use the new file path as needed in MainView
-        path = newFilePath;
+        internalCachePath = newFilePath;
+        useGeometryFlag = useGeometry;
     }
 
     private class ScaleListener extends ScaleGestureDetector.SimpleOnScaleGestureListener {

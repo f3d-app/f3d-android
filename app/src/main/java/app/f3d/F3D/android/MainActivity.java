@@ -1,32 +1,27 @@
 package app.f3d.F3D.android;
 
-import android.app.ActionBar;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
 import android.util.Log;
+
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.constraintlayout.widget.ConstraintLayout;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.InputStream;
+
+import java.util.Arrays;
 import java.util.Objects;
+
+import app.f3d.F3D.android.Utils.FileInteractionContract;
+import app.f3d.F3D.android.Utils.FileType;
+import app.f3d.F3D.android.Utils.FileUtils;
 
 public class MainActivity extends AppCompatActivity {
 
     private MainView mView;
-
-    private final ActivityResultLauncher<String> getContentLauncher = registerForActivityResult(
-            new ActivityResultContracts.GetContent(),
-            result -> {
-                if (result != null) {
-                    handleSelectedFile(result);
-                }
-            }
-    );
+    private ActivityResultLauncher<Void> fileInteractionLauncher;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -40,17 +35,32 @@ public class MainActivity extends AppCompatActivity {
 
         Objects.requireNonNull(getSupportActionBar()).hide();
 
-        addButton.setOnClickListener(view -> {
-            getContentLauncher.launch("*/*");
-        });
-
         mView = new MainView(this);
 
         handleSelectedFileAppNotOpen();
 
+        fileInteractionLauncher = registerForActivityResult(new FileInteractionContract(), this::handleSelectedFile);
+
+        addButton.setOnClickListener(view -> {
+            fileInteractionLauncher.launch(null);
+        });
+
         mainLayout.addView(mView);
     }
 
+    private void handleSelectedFile(Uri uri) {
+        String filePath = FileUtils.createTempFileFromUri(this,uri);
+        boolean useGeometry = FileType.checkFileTypeMethod(FileUtils.getFileExtension());
+        mView.updateFilePath(filePath,useGeometry);
+    }
+
+    private void handleSelectedFileAppNotOpen(){
+        Intent intent = getIntent();
+        if (intent != null && intent.getData() != null) {
+            Uri uri = intent.getData();
+            handleSelectedFile(uri);
+        }
+    }
 
     @Override protected void onPause()
     {
@@ -62,18 +72,5 @@ public class MainActivity extends AppCompatActivity {
     {
         super.onResume();
         mView.onResume();
-    }
-
-    private void handleSelectedFile(Uri uri) {
-        String filePath = FileUtils.createTempFileFromUri(this,uri);
-        mView.updateFilePath(filePath);
-    }
-
-    private void handleSelectedFileAppNotOpen(){
-        Intent intent = getIntent();
-        if (intent != null && intent.getData() != null) {
-            Uri uri = intent.getData();
-            handleSelectedFile(uri);
-        }
     }
 }

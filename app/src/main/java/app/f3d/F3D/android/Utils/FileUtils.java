@@ -1,4 +1,4 @@
-package app.f3d.F3D.android;
+package app.f3d.F3D.android.Utils;
 
 import android.content.ContentResolver;
 import android.content.Context;
@@ -15,11 +15,15 @@ import java.nio.file.Files;
 
 public class FileUtils {
 
+    private static String fileExtension;
+
     public static String createTempFileFromUri(Context context, Uri uri) {
         try (InputStream inputStream = context.getContentResolver().openInputStream(uri)) {
+//            String mimeType = context.getContentResolver().getType(uri);
             if (inputStream != null) {
                 String originalFileName = getFileNameFromUri(context.getContentResolver(), uri);
                 String[] nameAndExtension = extractNameAndExtension(originalFileName);
+                fileExtension = nameAndExtension[1];
                 File tempFile = createTempFile(context, nameAndExtension[0], nameAndExtension[1]);
 
                 try (BufferedInputStream bis = new BufferedInputStream(inputStream);
@@ -87,5 +91,9 @@ public class FileUtils {
         }
 
         return fileName;
+    }
+
+    public static String getFileExtension(){
+        return fileExtension;
     }
 }
