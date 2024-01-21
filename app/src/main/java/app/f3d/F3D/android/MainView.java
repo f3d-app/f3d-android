@@ -19,7 +19,6 @@ public class MainView extends GLSurfaceView {
     final private ScaleGestureDetector mScaleDetector;
     final private PanGestureDetector mPanDetector;
     final private RotateGestureDetector mRotateDetector;
-
     private String internalCachePath = "";
     private boolean useGeometryFlag = true;
 
@@ -38,11 +37,6 @@ public class MainView extends GLSurfaceView {
 
         this.setRenderer(new Renderer());
         this.setRenderMode(RENDERMODE_WHEN_DIRTY);
-    }
-
-    public void openBuffer(String buffer, String mimeType) {
-        // @TODO: to implement in C++ and expose the API
-        Log.e("Not implemented yet in F3D: open with mimetype=", mimeType);
     }
 
     private class Renderer implements GLSurfaceView.Renderer {

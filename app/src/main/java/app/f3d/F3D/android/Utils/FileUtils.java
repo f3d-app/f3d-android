@@ -50,18 +50,10 @@ public class FileUtils {
         if (parts.length >= 2) {
             nameAndExtension[0] = fileName.substring(0, fileName.lastIndexOf("."));
             nameAndExtension[1] = parts[parts.length - 1];
-        } else {
-            nameAndExtension[0] = fileName;
-            nameAndExtension[1] = "";
         }
 
         return nameAndExtension;
     }
-
-//    private static File createTempFile(Context context, String name, String extension) throws IOException {
-//        File cacheDir = context.getCacheDir();
-//        return new File(cacheDir, name + "-temp." + extension);
-//    }
 
     private static File createTempFile(Context context, String name, String extension) throws IOException {
         // Get the external cache directory or another suitable directory
