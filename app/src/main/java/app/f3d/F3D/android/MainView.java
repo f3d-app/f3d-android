@@ -6,6 +6,8 @@ import android.util.Log;
 import android.view.MotionEvent;
 import android.view.ScaleGestureDetector;
 
+import java.util.Objects;
+
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
 
@@ -17,10 +19,11 @@ public class MainView extends GLSurfaceView {
     final private ScaleGestureDetector mScaleDetector;
     final private PanGestureDetector mPanDetector;
     final private RotateGestureDetector mRotateDetector;
+    private String internalCachePath = "";
+    private boolean useGeometryFlag = true;
 
     public MainView(Context context) {
         super(context);
-
         start();
 
         this.mScaleDetector = new ScaleGestureDetector(context, new ScaleListener());
@@ -34,11 +37,6 @@ public class MainView extends GLSurfaceView {
 
         this.setRenderer(new Renderer());
         this.setRenderMode(RENDERMODE_WHEN_DIRTY);
-    }
-
-    public void openBuffer(String buffer, String mimeType) {
-        // @TODO: to implement in C++ and expose the API
-        Log.e("Not implemented yet in F3D: open with mimetype=", mimeType);
     }
 
     private class Renderer implements GLSurfaceView.Renderer {
@@ -67,10 +65,21 @@ public class MainView extends GLSurfaceView {
             MainView.this.mEngine.getOptions().toggle("render.background.skybox");
             MainView.this.mEngine.getOptions().toggle("ui.filename");
             MainView.this.mEngine.getOptions().toggle("ui.loader-progress");
+//            MainView.this.mEngine.getOptions().toggle("model.volume.enable");
 
-            // hard-coded path, change it
-            MainView.this.mEngine.getLoader().loadScene("/data/local/tmp/WaterBottle.glb");
+            if(!Objects.equals(internalCachePath, "")) {
+                if(useGeometryFlag){
+                    MainView.this.mEngine.getLoader().loadGeometry(internalCachePath);
+                }else{
+                    MainView.this.mEngine.getLoader().loadScene(internalCachePath);
+                }
+            }
         }
+    }
+    public void updateFilePath(String newFilePath, boolean useGeometry) {
+        // Use the new file path as needed in MainView
+        internalCachePath = newFilePath;
+        useGeometryFlag = useGeometry;
     }
 
     private class ScaleListener extends ScaleGestureDetector.SimpleOnScaleGestureListener {
