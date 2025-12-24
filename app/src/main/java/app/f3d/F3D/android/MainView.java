@@ -20,7 +20,6 @@ public class MainView extends GLSurfaceView {
     final private PanGestureDetector mPanDetector;
     final private RotateGestureDetector mRotateDetector;
     private String internalCachePath = "";
-    private boolean useGeometryFlag = true;
 
     public MainView(Context context) {
         super(context);
@@ -47,46 +46,41 @@ public class MainView extends GLSurfaceView {
 
         public void onSurfaceChanged(GL10 gl, int width, int height) {
             MainView.this.mEngine.getWindow().setSize(width, height);
-            MainView.this.mEngine.getWindow().render();
+            MainView.this.requestRender();
         }
 
         public void onSurfaceCreated(GL10 gl, EGLConfig config) {
             Engine.autoloadPlugins();
 
-            MainView.this.mEngine = new Engine();
+            MainView.this.mEngine = Engine.createExternalEGL();
 
             MainView.this.mEngine.setCachePath(MainView.this.getContext().getCacheDir().getAbsolutePath());
 
-            MainView.this.mEngine.getOptions().toggle("interactor.axis");
+            MainView.this.mEngine.getOptions().toggle("ui.axis");
             MainView.this.mEngine.getOptions().toggle("render.grid.enable");
-            MainView.this.mEngine.getOptions().toggle("render.effect.anti-aliasing");
-            MainView.this.mEngine.getOptions().toggle("render.effect.tone-mapping");
+            MainView.this.mEngine.getOptions().toggle("render.effect.antialiasing.enable");
+            MainView.this.mEngine.getOptions().toggle("render.effect.tone_mapping");
             MainView.this.mEngine.getOptions().toggle("render.hdri.ambient");
             MainView.this.mEngine.getOptions().toggle("render.background.skybox");
             MainView.this.mEngine.getOptions().toggle("ui.filename");
-            MainView.this.mEngine.getOptions().toggle("ui.loader-progress");
+            MainView.this.mEngine.getOptions().toggle("ui.loader_progress");
 //            MainView.this.mEngine.getOptions().toggle("model.volume.enable");
 
             if(!Objects.equals(internalCachePath, "")) {
-                if(useGeometryFlag){
-                    MainView.this.mEngine.getLoader().loadGeometry(internalCachePath);
-                }else{
-                    MainView.this.mEngine.getLoader().loadScene(internalCachePath);
-                }
+                MainView.this.mEngine.getScene().add(internalCachePath);
             }
         }
     }
-    public void updateFilePath(String newFilePath, boolean useGeometry) {
+    public void updateFilePath(String newFilePath) {
         // Use the new file path as needed in MainView
         internalCachePath = newFilePath;
-        useGeometryFlag = useGeometry;
     }
 
     private class ScaleListener extends ScaleGestureDetector.SimpleOnScaleGestureListener {
         @Override
         public boolean onScale(ScaleGestureDetector detector) {
             MainView.this.mEngine.getWindow().getCamera().dolly(detector.getScaleFactor());
-            MainView.this.mEngine.getWindow().render();
+            MainView.this.requestRender();
             return true;
         }
     }
@@ -110,7 +104,7 @@ public class MainView extends GLSurfaceView {
             camera.setFocalPoint(new double[] { motion[0] + focus[0], motion[1] + focus[1], motion[2] + focus[2] });
             camera.setPosition(new double[] { motion[0] + pos[0], motion[1] + pos[1], motion[2] + pos[2] });
 
-            window.render();
+            MainView.this.requestRender();
         }
     }
 
@@ -127,7 +121,7 @@ public class MainView extends GLSurfaceView {
             camera.azimuth(detector.getDistanceX() * delta_azimuth);
             camera.elevation(detector.getDistanceY() * delta_elevation);
 
-            window.render();
+            MainView.this.requestRender();
         }
     }
 

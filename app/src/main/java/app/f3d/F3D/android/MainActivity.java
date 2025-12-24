@@ -50,8 +50,7 @@ public class MainActivity extends AppCompatActivity {
 
     private void handleSelectedFile(Uri uri) {
         String filePath = FileUtils.createTempFileFromUri(this,uri);
-        boolean useGeometry = FileType.checkFileTypeMethod(FileUtils.getFileExtension());
-        mView.updateFilePath(filePath,useGeometry);
+        mView.updateFilePath(filePath);
     }
 
     private void handleSelectedFileAppNotOpen(){
