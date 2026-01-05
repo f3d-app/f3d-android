@@ -12,6 +12,8 @@ jobs:
     steps:
       - name: checkout
         uses: actions/checkout@v4
+        with:
+            lfs: true
 
       - name: Enable KVM
         run: |
@@ -23,4 +25,5 @@ jobs:
         uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: 29
+          arch: x86_64
           script: ./gradlew connectedCheck
