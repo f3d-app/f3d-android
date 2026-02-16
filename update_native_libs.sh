@@ -125,9 +125,9 @@ for arch in "${ARCHS[@]}"; do
     echo "========================================"
 
     CONFIG_CMD="cmake -S /src -B /src/build-${arch} \
-        -DF3D_BINDINGS_JAVA=ON \
         -DF3D_MODULE_EXR=ON \
         -DF3D_MODULE_UI=OFF \
+        -DF3D_MODULE_WEBP=ON \
         -DF3D_PLUGINS_STATIC_BUILD=ON \
         -DF3D_PLUGIN_BUILD_ALEMBIC=ON \
         -DF3D_PLUGIN_BUILD_ASSIMP=ON \
