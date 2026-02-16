@@ -162,6 +162,19 @@ for arch in "${ARCHS[@]}"; do
     echo "Copied libf3d-java.so ($SO_SIZE) -> jniLibs/$arch/"
 done
 
+# ── Copy .jar ────────────────────────────────────────────────────────────────
+
+# The jar is architecture-independent, copy from the first built arch
+JAR_SRC="$CLONE_DIR/build-${ARCHS[0]}/java/f3d.jar"
+if [[ ! -f "$JAR_SRC" ]]; then
+    echo "Error: expected $JAR_SRC not found after build."
+    exit 1
+fi
+
+LIBS_DIR="$SCRIPT_DIR/app/libs"
+mkdir -p "$LIBS_DIR"
+cp "$JAR_SRC" "$LIBS_DIR/f3d.jar"
+
 # ── Summary ──────────────────────────────────────────────────────────────────
 
 echo ""
