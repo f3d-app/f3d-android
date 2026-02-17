@@ -53,4 +53,4 @@ Use the Gradle wrapper to build:
 ./gradlew assembleRelease
 ```
 
-The resulting APK files are located in `app/build/outputs/apk/`.
+The resulting APK files are located in `f3d/build/outputs/apk/`.
