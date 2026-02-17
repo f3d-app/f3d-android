@@ -1,11 +1,14 @@
 package app.f3d.F3D.android;
 
 import android.content.Context;
+import android.net.Uri;
 import android.opengl.GLSurfaceView;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.ScaleGestureDetector;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.Objects;
 
 import javax.microedition.khronos.egl.EGLConfig;
@@ -19,7 +22,7 @@ public class MainView extends GLSurfaceView {
     final private ScaleGestureDetector mScaleDetector;
     final private PanGestureDetector mPanDetector;
     final private RotateGestureDetector mRotateDetector;
-    private String internalCachePath = "";
+    private Uri mActiveUri = Uri.EMPTY;
 
     public MainView(Context context) {
         super(context);
@@ -66,14 +69,23 @@ public class MainView extends GLSurfaceView {
             MainView.this.mEngine.getOptions().toggle("ui.loader_progress");
 //            MainView.this.mEngine.getOptions().toggle("model.volume.enable");
 
-            if(!Objects.equals(internalCachePath, "")) {
-                MainView.this.mEngine.getScene().add(internalCachePath);
+            if(!Objects.equals(mActiveUri, Uri.EMPTY)) {
+                try (InputStream inputStream = MainView.this.getContext().getContentResolver().openInputStream(mActiveUri)) {
+                    if (inputStream != null) {
+                        byte[] fileBytes = new byte[inputStream.available()];
+                        inputStream.read(fileBytes);
+
+                        MainView.this.mEngine.getScene().addBuffer(fileBytes, fileBytes.length);
+                    }
+                } catch (IOException e) {
+                    e.printStackTrace();
+                } 
             }
         }
     }
-    public void updateFilePath(String newFilePath) {
+    public void updateActiveUri(Uri uri) {
         // Use the new file path as needed in MainView
-        internalCachePath = newFilePath;
+        mActiveUri = uri;
     }
 
     private class ScaleListener extends ScaleGestureDetector.SimpleOnScaleGestureListener {

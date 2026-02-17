@@ -15,8 +15,6 @@ import java.util.Arrays;
 import java.util.Objects;
 
 import app.f3d.F3D.android.Utils.FileInteractionContract;
-import app.f3d.F3D.android.Utils.FileType;
-import app.f3d.F3D.android.Utils.FileUtils;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -49,8 +47,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void handleSelectedFile(Uri uri) {
-        String filePath = FileUtils.createTempFileFromUri(this,uri);
-        mView.updateFilePath(filePath);
+        mView.updateActiveUri(uri);
     }
 
     private void handleSelectedFileAppNotOpen(){
