@@ -15,8 +15,6 @@ jobs:
   cache_lfs:
     runs-on: ubuntu-22.04
     name: Update LFS data cache
-    if: |
-      github.ref == 'refs/heads/master'
     outputs:
       lfs_sha: ${{ steps.lfs_sha_recover.outputs.lfs_sha }}
     steps:
