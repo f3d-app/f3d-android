@@ -1,1 +1,5 @@
+# Build artifacts
 /build
+
+# Android signing file (should be kept private)
+*.jks
