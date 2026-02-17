@@ -154,7 +154,7 @@ for arch in "${ARCHS[@]}"; do
         exit 1
     fi
 
-    JNILIBS_DIR="$SCRIPT_DIR/app/src/main/jniLibs/$arch"
+    JNILIBS_DIR="$SCRIPT_DIR/f3d/src/main/jniLibs/$arch"
     mkdir -p "$JNILIBS_DIR"
     cp "$SO_SRC" "$JNILIBS_DIR/libf3d-java.so"
 
@@ -171,7 +171,7 @@ if [[ ! -f "$JAR_SRC" ]]; then
     exit 1
 fi
 
-LIBS_DIR="$SCRIPT_DIR/app/libs"
+LIBS_DIR="$SCRIPT_DIR/f3d/libs"
 mkdir -p "$LIBS_DIR"
 cp "$JAR_SRC" "$LIBS_DIR/f3d.jar"
 
