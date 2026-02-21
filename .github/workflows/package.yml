@@ -8,6 +8,7 @@ on:
   push:
     branches:
       - master
+  workflow_dispatch:
 
 jobs:
 
@@ -20,20 +21,12 @@ jobs:
     outputs:
       lfs_sha: ${{ steps.lfs_sha_recover.outputs.lfs_sha }}
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          path: "source"
-          ref: ${{github.event.pull_request.head.ref}}
-          repository: ${{github.event.pull_request.head.repo.full_name}}
-          fetch-depth: 1
-          lfs: false
-
       - name: Cache LFS Data
         id: lfs_sha_recover
         uses: f3d-app/lfs-data-cache-action@v2
         with:
-          cache_postfix: cache-0
+          ref: ${{github.event.pull_request.head.ref}}
+          repository: ${{github.event.pull_request.head.repo.full_name}}
 
   #----------------------------------------------------------------------------
   # Build and upload .apk packages
