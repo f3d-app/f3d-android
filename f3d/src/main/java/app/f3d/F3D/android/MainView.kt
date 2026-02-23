@@ -73,7 +73,7 @@ class MainView(context: Context) : GLSurfaceView(context) {
                                 val fileBytes = ByteArray(inputStream.available())
                                 inputStream.read(fileBytes)
 
-                                this@MainView.mEngine!!.scene.addBuffer(fileBytes, fileBytes.size)
+                                this@MainView.mEngine!!.scene.add(fileBytes)
                             }
                         }
                 } catch (e: IOException) {

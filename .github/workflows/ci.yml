@@ -44,7 +44,6 @@ jobs:
         with:
             type: "consumer"
             lfs_sha: ${{ needs.cache_lfs.outputs.lfs_sha }}
-            cache_postfix: cache-0
 
       - name: Set up JDK 17
         uses: actions/setup-java@v4
