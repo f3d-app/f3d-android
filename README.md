@@ -14,22 +14,23 @@ Android application built on top of [F3D](https://github.com/f3d-app/f3d).
 ## Update Native Libraries
 
 The `update_native_libs.sh` script clones F3D, cross-compiles it for Android inside Docker containers, and copies the resulting `.so` and `.jar` files into the project.
+A `jniLibs-lock.json` file describes where the native libraries are built from.
 Unless a specific F3D version is needed, this step can be skipped.
 
 ```bash
-# Build for all architectures (arm64-v8a, armeabi-v7a, x86_64, x86)
+# Build for all architectures (arm64-v8a, armeabi-v7a, x86_64, x86) using `jniLibs-lock.json` file
 ./update_native_libs.sh
 
-# Build a specific release
+# Build a specific release and save a new `jniLibs-lock.json` file
 ./update_native_libs.sh --branch v3.4.1
 
-# Build only specific architectures
+# Build only specific architectures using `jniLibs-lock.json` file
 ./update_native_libs.sh --arch arm64-v8a --arch x86_64
 
-# Use a custom fork or branch
+# Use a custom fork or branch and save a new `jniLibs-lock.json` file
 ./update_native_libs.sh --repo Meakk/f3d --branch my-feature
 
-# Use an existing local clone
+# Use an existing local clone (skip `jniLibs-lock.json` file logic, only for development purpose)
 ./update_native_libs.sh --clone-dir ~/dev/f3d-src
 ```
 
