@@ -7,10 +7,13 @@ android {
 
     defaultConfig {
         applicationId = "app.f3d.F3D.android"
-        minSdk = 27
+        minSdk = 28
         targetSdk = 35
         versionCode = 1
         versionName = "1.0"
+
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        testInstrumentationRunnerArguments["additionalTestOutputDir"] = "/storage/emulated/0/Android/data/app.f3d.F3D.android/files"
     }
 
     splits {
@@ -55,6 +58,10 @@ dependencies {
     implementation 'androidx.constraintlayout:constraintlayout:2.2.1'
     implementation 'com.google.android.material:material:1.13.0'
     implementation files('libs/f3d.jar')
+
+    // For UI Tests
+    androidTestImplementation 'androidx.test.ext:junit:1.2.1'
+    androidTestImplementation 'androidx.test:runner:1.6.2'
 }
 
 java {

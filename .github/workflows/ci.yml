@@ -28,8 +28,12 @@ jobs:
   build:
     needs: [cache_lfs]
 
-    name: Build development APKs
+    name: Build and Test
     runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        profile: [small_phone, medium_phone, medium_tablet, desktop_large]
 
     steps:
       - name: Checkout
@@ -57,3 +61,28 @@ jobs:
       - name: Build APKs
         working-directory: ${{github.workspace}}/source
         run: ./gradlew assembleDebug --no-configuration-cache
+
+      # https://github.blog/changelog/2023-02-23-hardware-accelerated-android-virtualization-on-actions-windows-and-linux-larger-hosted-runners/
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      # Using lavapipe (Mesa) is very important, the default GPU backend is very broken
+      - name: Run tests
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 28
+          arch: x86_64
+          profile: ${{ matrix.profile }}
+          emulator-options: -no-window -gpu lavapipe -no-snapshot -noaudio -no-boot-anim
+          script: ./gradlew connectedAndroidTest --info
+          working-directory: ${{github.workspace}}/source
+
+      - name: Upload test results
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-artifacts-${{ matrix.profile }}
+          path: ./source/f3d/build/outputs/connected_android_test_additional_output/debugAndroidTest/connected/

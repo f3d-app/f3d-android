@@ -7,6 +7,7 @@ import android.view.MotionEvent
 import android.view.ScaleGestureDetector
 import android.view.ScaleGestureDetector.SimpleOnScaleGestureListener
 import app.f3d.F3D.Engine
+import app.f3d.F3D.Image
 import app.f3d.F3D.android.PanGestureDetector.OnPanGestureListener
 import app.f3d.F3D.android.RotateGestureDetector.OnRotateGestureListener
 import java.io.IOException
@@ -86,6 +87,10 @@ class MainView(context: Context) : GLSurfaceView(context) {
     fun updateActiveUri(uri: Uri?) {
         // Use the new file path as needed in MainView
         mActiveUri = uri
+    }
+
+    fun renderToImage(): Image {
+        return mEngine!!.window.renderToImage()
     }
 
     private inner class ScaleListener : SimpleOnScaleGestureListener() {

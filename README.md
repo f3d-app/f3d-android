@@ -5,8 +5,11 @@ Android application built on top of [F3D](https://github.com/f3d-app/f3d).
 ## Prerequisites
 
 - Docker (for building native libraries)
-- Android SDK
+- Android SDK >= 36
 - Java 17
+
+> [!NOTE]
+> Android >= 9 (API level 28) is needed on a device to install the generated .apk.
 
 ## Update Native Libraries
 
@@ -57,3 +60,18 @@ Use the Gradle wrapper to build:
 > In order to build the release package, the signing file should be copied to `f3d/f3d-android-key.jks` and the environment variable `ANDROID_KEYSTORE_PASSWORD` should contain the correct password.
 
 The resulting APK files are located in `f3d/build/outputs/apk/`.
+
+## Testing the APK
+
+Use the Gradle wrapper to run the tests:
+
+```bash
+./gradlew connectedAndroidTest --info
+```
+
+> [!WARNING]
+> Some tests does image comparison and requires a specific device resolution. Currently, it's only tested on the following emulated devices:
+> - small_phone
+> - medium_phone
+> - medium_tablet
+> - desktop_large
