@@ -6,6 +6,7 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.net.Uri
 import androidx.constraintlayout.widget.ConstraintLayout
+import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.rules.ActivityScenarioRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
@@ -104,7 +105,7 @@ class MainActivityTest {
             val resolution = "${image.width}x${image.height}"
 
             // Copy test baseline image to app's internal storage
-            val baselineName = "testOpenFile_$resolution.png"
+            val baselineName = "testOpen_$resolution.png"
             val testFile = File(context.filesDir, "baseline.png")
             try {
                 instrumentation.context.assets.open("baselines/$baselineName").use { input ->
@@ -133,5 +134,85 @@ class MainActivityTest {
                 assertTrue("Rendered image differs from the baseline (diff=$difference, resolution=$resolution)", false)
             }
         }
+    }
+
+    // Simulate opening a file from a file explorer by launching the activity with an ACTION_VIEW intent
+    @Test
+    fun testOpenFromFileExplorer() {
+        val instrumentation = InstrumentationRegistry.getInstrumentation()
+        val context = instrumentation.targetContext
+
+        // Copy test asset to app's internal storage
+        val testFile = File(context.filesDir, "f3d.glb")
+        instrumentation.context.assets.open("data/f3d.glb").use { input ->
+            testFile.outputStream().use { output -> input.copyTo(output) }
+        }
+
+        // Create an ACTION_VIEW intent with the file URI, as if a file explorer selected F3D
+        val uri = Uri.fromFile(testFile)
+        val intent = Intent(Intent.ACTION_VIEW).apply {
+            setDataAndType(uri, "*/*")
+            setClassName(context, "app.f3d.F3D.android.MainActivity")
+        }
+
+        // Launch the activity with the ACTION_VIEW intent
+        val scenario = ActivityScenario.launch<MainActivity>(intent)
+
+        // Wait for the file to load and render
+        Thread.sleep(3000)
+
+        // Take a screenshot to verify the file was loaded
+        scenario.onActivity { activity ->
+            val mainLayout = activity!!.findViewById<ConstraintLayout>(R.id.mainLayout)
+            val mainView = mainLayout.getChildAt(mainLayout.childCount - 1) as MainView
+
+            var image: Image? = null
+            val latch = CountDownLatch(1)
+
+            mainView.queueEvent {
+                image = mainView.renderToImage()
+                latch.countDown()
+            }
+
+            latch.await(5, TimeUnit.SECONDS)
+
+            assertTrue("Rendered image is null", image != null)
+            assertTrue("Rendered image has invalid width", image!!.width > 0)
+            assertTrue("Rendered image has invalid height", image.height > 0)
+
+            val resolution = "${image.width}x${image.height}"
+
+            // Copy test baseline image to app's internal storage
+            val baselineName = "testOpen_$resolution.png"
+            val baselineFile = File(context.filesDir, "baseline.png")
+            try {
+                instrumentation.context.assets.open("baselines/$baselineName").use { input ->
+                    baselineFile.outputStream().use { output -> input.copyTo(output) }
+                }
+            } catch (e: java.io.FileNotFoundException) {
+                // No baseline for this resolution, save the rendered image as a candidate
+                val outputFile = File(context.getExternalFilesDir(null), baselineName)
+                image.save(outputFile.absolutePath)
+                println("No baseline found for $resolution. Saved rendered image to: ${outputFile.absolutePath}")
+                assertTrue("No baseline found for resolution $resolution. Rendered image saved as $baselineName", false)
+            }
+
+            val baselineImage = Image(baselineFile.absolutePath)
+
+            val difference = image.compare(baselineImage)
+            println("Image difference: $difference")
+
+            if (difference > 0.04) {
+                // If the difference is greater than the threshold, save the rendered image for
+                // manual inspection
+                val outputFile = File(context.getExternalFilesDir(null), baselineName)
+                image.save(outputFile.absolutePath)
+                println("Saved rendered image to: ${outputFile.absolutePath}")
+
+                assertTrue("Rendered image differs from the baseline (diff=$difference, resolution=$resolution)", false)
+            }
+        }
+
+        scenario.close()
     }
 }
