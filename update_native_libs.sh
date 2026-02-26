@@ -183,7 +183,7 @@ for arch in "${ARCHS[@]}"; do
 
     STRIP_CMD="/ndk/toolchains/llvm/prebuilt/linux-x86_64/bin/llvm-strip --strip-all /src/build-${arch}/lib/libf3d-java.so"
 
-    docker run --rm -it \
+    docker run --rm \
         -e CMAKE_BUILD_PARALLEL_LEVEL \
         -u "$(id -u):$(id -g)" \
         -v "$CLONE_DIR":/src \
