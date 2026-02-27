@@ -22,13 +22,13 @@ Unless a specific F3D version is needed, this step can be skipped.
 ./update_native_libs.sh
 
 # Build a specific release and save a new `jniLibs-lock.json` file
-./update_native_libs.sh --branch v3.4.1
+./update_native_libs.sh --ref v3.4.1
 
 # Build only specific architectures using `jniLibs-lock.json` file
 ./update_native_libs.sh --arch arm64-v8a --arch x86_64
 
 # Use a custom fork or branch and save a new `jniLibs-lock.json` file
-./update_native_libs.sh --repo Meakk/f3d --branch my-feature
+./update_native_libs.sh --repo Meakk/f3d --ref my-feature
 
 # Use an existing local clone (skip `jniLibs-lock.json` file logic, only for development purpose)
 ./update_native_libs.sh --clone-dir ~/dev/f3d-src

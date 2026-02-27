@@ -11,19 +11,20 @@
 #
 # Options:
 #   --repo <owner/repo> GitHub repository (default: f3d-app/f3d)
-#   --branch <name>     Git branch/tag to clone. When specified, the resolved
-#                       commit SHA is written to jniLibs-lock.json. When omitted,
-#                       the script reads jniLibs-lock.json to fetch the pinned commit.
+#   --ref <name>        Git ref (branch, tag, or commit SHA) to fetch. When
+#                       specified, the resolved commit SHA is written to
+#                       jniLibs-lock.json. When omitted, the script reads
+#                       jniLibs-lock.json to fetch the pinned commit.
 #   --clone-dir <path>  Directory to clone into (default: temporary, cleaned up on exit).
 #                       If the directory already contains a git repo, no clone is
-#                       performed and --repo/--branch are ignored.
+#                       performed and --repo/--ref are ignored.
 #   --arch <abi>        Build only specific ABI (can be repeated; default: all four)
 #
 # Examples:
 #   ./update_native_libs.sh
-#   ./update_native_libs.sh --branch v3.4.1
+#   ./update_native_libs.sh --ref v3.4.1
 #   ./update_native_libs.sh --arch arm64-v8a --arch x86_64
-#   ./update_native_libs.sh --repo Meakk/f3d --branch my-feature
+#   ./update_native_libs.sh --repo Meakk/f3d --ref my-feature
 #   ./update_native_libs.sh --clone-dir ~/dev/f3d-src
 #
 
@@ -34,10 +35,10 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 ALL_ARCHS=(arm64-v8a armeabi-v7a x86_64 x86)
 
 REPO="f3d-app/f3d"
-BRANCH=""
+REF=""
 CLONE_DIR=""
 ARCHS=()
-BRANCH_SPECIFIED=false
+REF_SPECIFIED=false
 REPO_SPECIFIED=false
 
 LOCK_FILE="$SCRIPT_DIR/jniLibs-lock.json"
@@ -47,7 +48,7 @@ usage() {
     echo ""
     echo "Options:"
     echo "  --repo <owner/repo> GitHub repository (default: $REPO)"
-    echo "  --branch <name>     Git branch/tag (writes commit to jniLibs-lock.json)"
+    echo "  --ref <name>        Git ref: branch, tag, or commit SHA (writes commit to jniLibs-lock.json)"
     echo "  --clone-dir <path>  Clone directory (default: temporary)"
     echo "  --arch <abi>        ABI to build (repeatable; default: all)"
     echo ""
@@ -62,9 +63,9 @@ while [[ $# -gt 0 ]]; do
             REPO_SPECIFIED=true
             shift 2
             ;;
-        --branch)
-            BRANCH="$2"
-            BRANCH_SPECIFIED=true
+        --ref)
+            REF="$2"
+            REF_SPECIFIED=true
             shift 2
             ;;
         --clone-dir)
@@ -104,17 +105,17 @@ done
 
 # ── Resolve commit / branch ───────────────────────────────────────────────────
 
-if [[ "$BRANCH_SPECIFIED" == false ]]; then
+if [[ "$REF_SPECIFIED" == false ]]; then
     # Read pinned commit from lock file
     if [[ ! -f "$LOCK_FILE" ]]; then
-        echo "Error: --branch not specified and $LOCK_FILE not found."
+        echo "Error: --ref not specified and $LOCK_FILE not found."
         exit 1
     fi
-    COMMIT=$(jq -r '.commit' "$LOCK_FILE")
+    REF=$(jq -r '.commit' "$LOCK_FILE")
     if [[ "$REPO_SPECIFIED" == false ]]; then
         REPO=$(jq -r '.repo' "$LOCK_FILE")
     fi
-    echo "Using pinned commit $COMMIT (from $LOCK_FILE)"
+    echo "Using pinned commit $REF (from $LOCK_FILE)"
 fi
 
 # ── Clone ────────────────────────────────────────────────────────────────────
@@ -128,21 +129,16 @@ if [[ -d "$CLONE_DIR/.git" ]]; then
     echo "Source directory $CLONE_DIR already contains a git repo, skipping clone."
 else
     REPO_URL="https://github.com/${REPO}.git"
-    if [[ "$BRANCH_SPECIFIED" == true ]]; then
-        echo "Cloning $REPO_URL ($BRANCH) into $CLONE_DIR ..."
-        GIT_LFS_SKIP_SMUDGE=1 git clone --branch "$BRANCH" --depth 1 --single-branch --filter=blob:none "$REPO_URL" "$CLONE_DIR"
-    else
-        echo "Fetching commit $COMMIT from $REPO_URL into $CLONE_DIR ..."
-        git init "$CLONE_DIR"
-        git -C "$CLONE_DIR" remote add origin "$REPO_URL"
-        GIT_LFS_SKIP_SMUDGE=1 git -C "$CLONE_DIR" fetch --depth 1 origin "$COMMIT"
-        git -C "$CLONE_DIR" checkout FETCH_HEAD
-    fi
+    echo "Fetching $REF from $REPO_URL into $CLONE_DIR ..."
+    git init "$CLONE_DIR"
+    git -C "$CLONE_DIR" remote add origin "$REPO_URL"
+    GIT_LFS_SKIP_SMUDGE=1 git -C "$CLONE_DIR" fetch --depth 1 origin "$REF"
+    git -C "$CLONE_DIR" checkout FETCH_HEAD
 fi
 
 # ── Write lock file ──────────────────────────────────────────────────────────
 
-if [[ "$BRANCH_SPECIFIED" == true ]]; then
+if [[ "$REF_SPECIFIED" == true ]]; then
     COMMIT=$(git -C "$CLONE_DIR" rev-parse HEAD)
     jq -n --arg repo "$REPO" --arg commit "$COMMIT" \
         '{repo: $repo, commit: $commit}' > "$LOCK_FILE"
