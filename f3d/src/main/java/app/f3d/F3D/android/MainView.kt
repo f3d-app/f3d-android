@@ -42,7 +42,7 @@ class MainView(context: Context) : GLSurfaceView(context) {
     }
 
     fun loadFile() {
-        if (mActiveUri != null) {
+        if (this@MainView.mEngine != null && mActiveUri != null) {
             try {
                 this@MainView.context.contentResolver.openInputStream(mActiveUri!!)
                     .use { inputStream ->
@@ -105,6 +105,16 @@ class MainView(context: Context) : GLSurfaceView(context) {
 
     fun renderToImage(): Image {
         return mEngine!!.window.renderToImage()
+    }
+
+    fun rotateCamera(azimuth: Double, elevation: Double) {
+        val window = mEngine!!.window
+        val camera = window.camera
+
+        camera.azimuth(azimuth)
+        camera.elevation(elevation)
+
+        requestRender()
     }
 
     private inner class ScaleListener : SimpleOnScaleGestureListener() {
