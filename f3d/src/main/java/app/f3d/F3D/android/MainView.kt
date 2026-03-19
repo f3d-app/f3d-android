@@ -42,7 +42,7 @@ class MainView(context: Context) : GLSurfaceView(context) {
     }
 
     fun loadFile() {
-        if (this@MainView.mEngine != null && mActiveUri != null) {
+        if (mActiveUri != null) {
             try {
                 this@MainView.context.contentResolver.openInputStream(mActiveUri!!)
                     .use { inputStream ->
@@ -52,6 +52,8 @@ class MainView(context: Context) : GLSurfaceView(context) {
 
                             this@MainView.mEngine!!.scene.clear()
                             this@MainView.mEngine!!.scene.add(fileBytes)
+                            this@MainView.mEngine!!.window.camera.resetToBounds()
+                            mActiveUri = null
                         }
                     }
             } catch (e: IOException) {
@@ -62,6 +64,7 @@ class MainView(context: Context) : GLSurfaceView(context) {
 
     private inner class Renderer : GLSurfaceView.Renderer {
         override fun onDrawFrame(gl: GL10?) {
+            this@MainView.loadFile()
             this@MainView.mEngine!!.window.render()
         }
 
@@ -71,36 +74,31 @@ class MainView(context: Context) : GLSurfaceView(context) {
         }
 
         override fun onSurfaceCreated(gl: GL10?, config: EGLConfig?) {
-            // If the engine already exists, the EGL context was preserved
-            if (this@MainView.mEngine == null) {
-                Engine.autoloadPlugins()
 
-                Log.setVerboseLevel(Log.VerboseLevel.DEBUG)
+            Engine.autoloadPlugins()
 
-                this@MainView.mEngine = Engine.createExternalEGL()
+            Log.setVerboseLevel(Log.VerboseLevel.DEBUG)
 
-                this@MainView.mEngine!!.setCachePath(
-                    this@MainView.context.cacheDir.absolutePath
-                )
+            this@MainView.mEngine = Engine.createExternalEGL()
 
-                this@MainView.mEngine!!.options.toggle("ui.axis")
-                this@MainView.mEngine!!.options.toggle("render.grid.enable")
-                this@MainView.mEngine!!.options.toggle("render.effect.antialiasing.enable")
-                this@MainView.mEngine!!.options.toggle("render.effect.tone_mapping")
-                this@MainView.mEngine!!.options.toggle("render.hdri.ambient")
-                this@MainView.mEngine!!.options.toggle("ui.loader_progress")
-            }
+            this@MainView.mEngine!!.setCachePath(
+                this@MainView.context.cacheDir.absolutePath
+            )
 
-            this@MainView.loadFile()
+            this@MainView.mEngine!!.options.toggle("ui.axis")
+            this@MainView.mEngine!!.options.toggle("render.grid.enable")
+            this@MainView.mEngine!!.options.toggle("render.effect.antialiasing.enable")
+            this@MainView.mEngine!!.options.toggle("render.effect.tone_mapping")
+            this@MainView.mEngine!!.options.toggle("render.hdri.ambient")
+            this@MainView.mEngine!!.options.toggle("ui.loader_progress")
+
+            this@MainView.requestRender()
         }
     }
 
     fun updateActiveUri(uri: Uri?) {
         // Use the new file path as needed in MainView
         mActiveUri = uri
-        if (uri != null) {
-            loadFile()
-        }
     }
 
     fun renderToImage(): Image {
