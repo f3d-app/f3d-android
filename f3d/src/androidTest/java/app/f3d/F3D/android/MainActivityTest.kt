@@ -24,7 +24,7 @@ import org.junit.runner.RunWith
 class MainActivityTest {
     @get:Rule
     var activityRule: ActivityScenarioRule<MainActivity?> =
-            ActivityScenarioRule<MainActivity?>(MainActivity::class.java)
+            ActivityScenarioRule(MainActivity::class.java)
 
     // Simulate a click on the '+' button and cancel, to make sure we do not crash
     @Test
@@ -111,7 +111,7 @@ class MainActivityTest {
                 instrumentation.context.assets.open("baselines/$baselineName").use { input ->
                     testFile.outputStream().use { output -> input.copyTo(output) }
                 }
-            } catch (e: java.io.FileNotFoundException) {
+            } catch (_: java.io.FileNotFoundException) {
                 // No baseline for this resolution, save the rendered image as a candidate
                 val outputFile = File(context.getExternalFilesDir(null), baselineName)
                 image.save(outputFile.absolutePath)
@@ -121,7 +121,7 @@ class MainActivityTest {
 
             val baselineImage = Image(testFile.absolutePath)
 
-            val difference = image!!.compare(baselineImage)
+            val difference = image.compare(baselineImage)
             println("Image difference: $difference")
 
             if (difference > 0.04) {
@@ -189,7 +189,7 @@ class MainActivityTest {
                 instrumentation.context.assets.open("baselines/$baselineName").use { input ->
                     baselineFile.outputStream().use { output -> input.copyTo(output) }
                 }
-            } catch (e: java.io.FileNotFoundException) {
+            } catch (_: java.io.FileNotFoundException) {
                 // No baseline for this resolution, save the rendered image as a candidate
                 val outputFile = File(context.getExternalFilesDir(null), baselineName)
                 image.save(outputFile.absolutePath)
