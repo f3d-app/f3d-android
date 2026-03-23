@@ -55,6 +55,15 @@ android {
     namespace = 'app.f3d.F3D.android'
 }
 
+androidComponents {
+    onVariants(selector().all()) { variant ->
+        variant.outputs.forEach { output ->
+            def abi = output.filters.find { it.filterType.name() == "ABI" }?.identifier ?: "universal"
+            output.outputFileName.set("f3d-android-${lockFile.version}-${abi}.apk")
+        }
+    }
+}
+
 dependencies {
     implementation 'androidx.appcompat:appcompat:1.7.1'
     implementation 'androidx.activity:activity:1.12.4'
