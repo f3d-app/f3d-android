@@ -217,6 +217,86 @@ class MainActivityTest {
         scenario.close()
     }
 
+    // Simulate opening a file from a file explorer while the app is already running
+    @Test
+    fun testOpenFromFileExplorerWhileRunning() {
+        val instrumentation = InstrumentationRegistry.getInstrumentation()
+        val context = instrumentation.targetContext
+
+        // Copy test asset to app's internal storage
+        val testFile = File(context.filesDir, "f3d.glb")
+        instrumentation.context.assets.open("data/f3d.glb").use { input ->
+            testFile.outputStream().use { output -> input.copyTo(output) }
+        }
+
+        // Wait for the default activity to be fully started
+        instrumentation.waitForIdleSync()
+
+        // Deliver an ACTION_VIEW intent to the already-running activity
+        val uri = Uri.fromFile(testFile)
+        val intent = Intent(Intent.ACTION_VIEW).apply {
+            setDataAndType(uri, "*/*")
+            setClassName(context, "app.f3d.F3D.android.MainActivity")
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        }
+        context.startActivity(intent)
+
+        // Wait for the file to load and render
+        Thread.sleep(3000)
+
+        // Take a screenshot to verify the file was loaded
+        activityRule.scenario.onActivity { activity ->
+            val mainLayout = activity!!.findViewById<ConstraintLayout>(R.id.mainLayout)
+            val mainView = mainLayout.getChildAt(mainLayout.childCount - 1) as MainView
+
+            var image: Image? = null
+            val latch = CountDownLatch(1)
+
+            mainView.queueEvent {
+                image = mainView.renderToImage()
+                latch.countDown()
+            }
+
+            latch.await(5, TimeUnit.SECONDS)
+
+            assertTrue("Rendered image is null", image != null)
+            assertTrue("Rendered image has invalid width", image!!.width > 0)
+            assertTrue("Rendered image has invalid height", image.height > 0)
+
+            val resolution = "${image.width}x${image.height}"
+
+            // Copy test baseline image to app's internal storage
+            val baselineName = "testOpen_$resolution.png"
+            val baselineFile = File(context.filesDir, "baseline.png")
+            try {
+                instrumentation.context.assets.open("baselines/$baselineName").use { input ->
+                    baselineFile.outputStream().use { output -> input.copyTo(output) }
+                }
+            } catch (_: java.io.FileNotFoundException) {
+                // No baseline for this resolution, save the rendered image as a candidate
+                val outputFile = File(context.getExternalFilesDir(null), baselineName)
+                image.save(outputFile.absolutePath)
+                println("No baseline found for $resolution. Saved rendered image to: ${outputFile.absolutePath}")
+                assertTrue("No baseline found for resolution $resolution. Rendered image saved as ${outputFile.absolutePath}", false)
+            }
+
+            val baselineImage = Image(baselineFile.absolutePath)
+
+            val difference = image.compare(baselineImage)
+            println("Image difference: $difference")
+
+            if (difference > 0.04) {
+                // If the difference is greater than the threshold, save the rendered image for
+                // manual inspection
+                val outputFile = File(context.getExternalFilesDir(null), baselineName)
+                image.save(outputFile.absolutePath)
+                println("Saved rendered image to: ${outputFile.absolutePath}")
+
+                assertTrue("Rendered image differs from the baseline (diff=$difference, resolution=$resolution)", false)
+            }
+        }
+    }
+
     // Open a file, rotate 90 degrees, switch apps, come back, and verify the view
     @Test
     fun testRotateAndResume() {
