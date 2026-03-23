@@ -129,20 +129,19 @@ if [[ -d "$CLONE_DIR/.git" ]]; then
     echo "Source directory $CLONE_DIR already contains a git repo, skipping clone."
 else
     REPO_URL="https://github.com/${REPO}.git"
-    echo "Fetching $REF from $REPO_URL into $CLONE_DIR ..."
-    git init "$CLONE_DIR"
-    git -C "$CLONE_DIR" remote add origin "$REPO_URL"
-    GIT_LFS_SKIP_SMUDGE=1 git -C "$CLONE_DIR" fetch --depth 1 origin "$REF"
-    git -C "$CLONE_DIR" checkout FETCH_HEAD
+    echo "Cloning $REPO_URL into $CLONE_DIR ..."
+    GIT_LFS_SKIP_SMUDGE=1 git clone "$REPO_URL" "$CLONE_DIR"
+    git -C "$CLONE_DIR" checkout "$REF"
 fi
 
 # ── Write lock file ──────────────────────────────────────────────────────────
 
 if [[ "$REF_SPECIFIED" == true ]]; then
     COMMIT=$(git -C "$CLONE_DIR" rev-parse HEAD)
-    jq -n --arg repo "$REPO" --arg commit "$COMMIT" \
-        '{repo: $repo, commit: $commit}' > "$LOCK_FILE"
-    echo "Pinned commit $COMMIT to $LOCK_FILE"
+    VERSION=$(git -C "$CLONE_DIR" describe)
+    jq -n --arg repo "$REPO" --arg commit "$COMMIT" --arg version "$VERSION" \
+        '{repo: $repo, commit: $commit, version: $version}' > "$LOCK_FILE"
+    echo "Pinned commit $COMMIT (version $VERSION) to $LOCK_FILE"
 fi
 
 # ── Pull Docker images ───────────────────────────────────────────────────────

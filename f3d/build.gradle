@@ -2,6 +2,9 @@ plugins {
     id 'com.android.application'
 }
 
+import groovy.json.JsonSlurper
+def lockFile = new JsonSlurper().parse(file("$rootDir/jniLibs-lock.json"))
+
 android {
     compileSdk = 36
 
@@ -10,7 +13,7 @@ android {
         minSdk = 28
         targetSdk = 35
         versionCode = 1
-        versionName = "1.0"
+        versionName = lockFile.version
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         testInstrumentationRunnerArguments["additionalTestOutputDir"] = "/storage/emulated/0/Android/data/app.f3d.F3D.android/files"
