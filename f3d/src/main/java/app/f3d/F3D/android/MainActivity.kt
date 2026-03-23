@@ -1,5 +1,6 @@
 package app.f3d.F3D.android
 
+import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
 import android.view.View
@@ -50,6 +51,13 @@ class MainActivity : AppCompatActivity() {
         if (intent != null && intent.data != null) {
             val uri = intent.data
             handleSelectedFile(uri)
+        }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        if (intent.data != null) {
+            handleSelectedFile(intent.data)
         }
     }
 
