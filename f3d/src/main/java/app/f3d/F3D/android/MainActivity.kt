@@ -4,14 +4,11 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
 import android.view.View
-import androidx.activity.result.ActivityResultCallback
 import androidx.activity.result.ActivityResultLauncher
-import androidx.appcompat.app.ActionBar
 import androidx.appcompat.app.AppCompatActivity
 import androidx.constraintlayout.widget.ConstraintLayout
 import app.f3d.F3D.android.Utils.FileInteractionContract
 import com.google.android.material.floatingactionbutton.FloatingActionButton
-import java.util.Objects
 
 class MainActivity : AppCompatActivity() {
     private var mView: MainView? = null
@@ -31,13 +28,13 @@ class MainActivity : AppCompatActivity() {
 
         handleSelectedFileAppNotOpen()
 
-        fileInteractionLauncher = registerForActivityResult<Void?, Uri?>(
-            FileInteractionContract(),
-            ActivityResultCallback { uri: Uri? -> this.handleSelectedFile(uri) })
+        fileInteractionLauncher = registerForActivityResult(
+            FileInteractionContract()
+        ) { uri: Uri? -> this.handleSelectedFile(uri) }
 
-        addButton.setOnClickListener(View.OnClickListener { view: View? ->
+        addButton.setOnClickListener { _: View? ->
             fileInteractionLauncher!!.launch(null)
-        })
+        }
 
         mainLayout.addView(mView)
     }

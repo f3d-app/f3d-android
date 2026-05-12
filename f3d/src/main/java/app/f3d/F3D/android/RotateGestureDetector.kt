@@ -41,11 +41,11 @@ class RotateGestureDetector(private val mGestureListener: OnRotateGestureListene
      * @param event The motion event that occurred.
      */
     fun onTouchEvent(event: MotionEvent) {
-        when (event.getActionMasked()) {
+        when (event.actionMasked) {
             MotionEvent.ACTION_DOWN -> {
-                mPointerId = event.getPointerId(event.getActionIndex())
-                mLastTouchX = event.getX()
-                mLastTouchY = event.getY()
+                mPointerId = event.getPointerId(event.actionIndex)
+                mLastTouchX = event.x
+                mLastTouchY = event.y
             }
 
             MotionEvent.ACTION_POINTER_DOWN -> {
@@ -55,8 +55,11 @@ class RotateGestureDetector(private val mGestureListener: OnRotateGestureListene
 
             MotionEvent.ACTION_MOVE -> {
                 if (mPointerId != INVALID_POINTER_ID) {
-                    val x = event.getX()
-                    val y = event.getY()
+                    val pointerIndex = event.findPointerIndex(mPointerId)
+                    if (pointerIndex < 0) return
+
+                    val x = event.getX(pointerIndex)
+                    val y = event.getY(pointerIndex)
 
                     // Calculate the distance moved
                     this.distanceX = x - mLastTouchX
@@ -67,6 +70,10 @@ class RotateGestureDetector(private val mGestureListener: OnRotateGestureListene
 
                     mGestureListener.onRotate(this)
                 }
+            }
+
+            MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
+                mPointerId = INVALID_POINTER_ID
             }
         }
     }
@@ -86,6 +93,6 @@ class RotateGestureDetector(private val mGestureListener: OnRotateGestureListene
     }
 
     companion object {
-        private val INVALID_POINTER_ID = -1
+        private const val INVALID_POINTER_ID = -1
     }
 }
