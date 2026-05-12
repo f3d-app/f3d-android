@@ -56,7 +56,7 @@ class RotateGestureDetector(private val mGestureListener: OnRotateGestureListene
             MotionEvent.ACTION_MOVE -> {
                 if (mPointerId != INVALID_POINTER_ID) {
                     val pointerIndex = event.findPointerIndex(mPointerId)
-                    if (pointerIndex < 0) return
+                    if (pointerIndex < 0) { return }
 
                     val x = event.getX(pointerIndex)
                     val y = event.getY(pointerIndex)

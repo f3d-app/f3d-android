@@ -71,7 +71,7 @@ Use the Gradle wrapper to run the tests:
 ```
 
 > [!WARNING]
-> Some tests does image comparison and requires a specific device resolution. Currently, it's only tested on the following emulated devices:
+> Some tests does image comparison and requires a specific device resolution. Currently, it's only tested on api levels 28 and 36 and with the following emulated devices:
 > - small_phone
 > - medium_phone
 > - medium_tablet
