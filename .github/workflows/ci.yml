@@ -35,6 +35,7 @@ jobs:
       fail-fast: false
       matrix:
         profile: [small_phone, medium_phone, medium_tablet, desktop_large]
+        api: [28, 36]
 
     steps:
       - name: Checkout
@@ -74,7 +75,7 @@ jobs:
       - name: Run tests
         uses: reactivecircus/android-emulator-runner@v2
         with:
-          api-level: 28
+          api-level: ${{ matrix.api }}
           arch: x86_64
           profile: ${{ matrix.profile }}
           emulator-options: -no-window -gpu lavapipe -no-snapshot -noaudio -no-boot-anim

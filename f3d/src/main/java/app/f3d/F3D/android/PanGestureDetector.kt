@@ -73,7 +73,7 @@ class PanGestureDetector(private val mGestureListener: OnPanGestureListener) {
                 mPreviousLine = currentLine
             }
 
-            MotionEvent.ACTION_UP -> {
+            MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
                 mPointerId1 = INVALID_POINTER_ID
                 mPointerId2 = INVALID_POINTER_ID
             }

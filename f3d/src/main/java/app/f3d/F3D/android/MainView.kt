@@ -176,10 +176,12 @@ class MainView(context: Context) : GLSurfaceView(context) {
     // forward events to rendering thread for it to handle
     @SuppressLint("ClickableViewAccessibility")
     override fun onTouchEvent(event: MotionEvent): Boolean {
+        val eventCopy = MotionEvent.obtain(event)
         queueEvent {
-            mPanDetector.onTouchEvent(event)
-            mScaleDetector.onTouchEvent(event)
-            mRotateDetector.onTouchEvent(event)
+            mPanDetector.onTouchEvent(eventCopy)
+            mScaleDetector.onTouchEvent(eventCopy)
+            mRotateDetector.onTouchEvent(eventCopy)
+            eventCopy.recycle()
         }
 
         return true
