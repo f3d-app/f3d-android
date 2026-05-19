@@ -73,7 +73,7 @@ jobs:
 
       # Using lavapipe (Mesa) is very important, the default GPU backend is broken
       - name: Run tests
-        uses: reactivecircus/android-emulator-runner@v2
+        uses: reactivecircus/android-emulator-runner@v2.37.0
         with:
           api-level: ${{ matrix.api }}
           arch: x86_64
