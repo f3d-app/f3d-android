@@ -12,7 +12,7 @@ import app.f3d.F3D.Image
 import app.f3d.F3D.Log
 import app.f3d.F3D.android.PanGestureDetector.OnPanGestureListener
 import app.f3d.F3D.android.RotateGestureDetector.OnRotateGestureListener
-import java.io.IOException
+import com.google.android.material.snackbar.Snackbar
 import javax.microedition.khronos.egl.EGLConfig
 import javax.microedition.khronos.opengles.GL10
 
@@ -26,6 +26,8 @@ class MainView(context: Context) : GLSurfaceView(context) {
 
     init {
         start()
+
+        copyAssetFolder("usd", context.filesDir.absolutePath + "/usd")
 
         this.mScaleDetector = ScaleGestureDetector(context, ScaleListener())
         this.mPanDetector = PanGestureDetector(PanListener())
@@ -56,7 +58,13 @@ class MainView(context: Context) : GLSurfaceView(context) {
                             mActiveUri = null
                         }
                     }
-            } catch (e: IOException) {
+            } catch (e: Exception) {
+                android.os.Handler(android.os.Looper.getMainLooper()).post {
+                    Snackbar.make(this@MainView, "Failed to load file: " + e.message, Snackbar.LENGTH_SHORT).apply {
+                        view.setBackgroundColor(context.getColor(R.color.white))
+                        setTextColor(context.getColor(R.color.black))
+                    }.show()
+                }
                 e.printStackTrace()
             }
         }
@@ -75,9 +83,10 @@ class MainView(context: Context) : GLSurfaceView(context) {
 
         override fun onSurfaceCreated(gl: GL10?, config: EGLConfig?) {
 
+            Log.setVerboseLevel(Log.VerboseLevel.DEBUG)
             Engine.autoloadPlugins()
 
-            Log.setVerboseLevel(Log.VerboseLevel.DEBUG)
+            Engine.setReaderOption("USD.resources_path", context.filesDir.absolutePath + "/usd")
 
             this@MainView.mEngine = Engine.createExternalEGL()
 
@@ -93,6 +102,18 @@ class MainView(context: Context) : GLSurfaceView(context) {
             this@MainView.mEngine!!.options.toggle("ui.loader_progress")
 
             this@MainView.requestRender()
+        }
+    }
+
+    private fun copyAssetFolder(assetPath: String, destPath: String) {
+        val children = context.assets.list(assetPath)
+        if (children.isNullOrEmpty()) {
+            context.assets.open(assetPath).use { input ->
+                java.io.File(destPath).outputStream().use { input.copyTo(it) }
+            }
+        } else {
+            java.io.File(destPath).mkdirs()
+            children.forEach { child -> copyAssetFolder("$assetPath/$child", "$destPath/$child") }
         }
     }
 
