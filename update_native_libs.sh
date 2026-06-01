@@ -159,8 +159,15 @@ for arch in "${ARCHS[@]}"; do
     echo " Building for $arch"
     echo "========================================"
 
+    # Disable USD on 32-bit architectures
+    case "$arch" in
+        armeabi-v7a|x86) USD_FLAG=OFF ;;
+        *)                USD_FLAG=ON  ;;
+    esac
+
     CONFIG_CMD="cmake -S /src -B /src/build-${arch} \
         -DCMAKE_BUILD_TYPE=Release \
+        -DCMAKE_MODULE_PATH=/depends/lib/cmake/OpenVDB \
         -DF3D_MODULE_EXR=ON \
         -DF3D_MODULE_UI=OFF \
         -DF3D_MODULE_WEBP=ON \
@@ -168,8 +175,11 @@ for arch in "${ARCHS[@]}"; do
         -DF3D_PLUGIN_BUILD_ALEMBIC=ON \
         -DF3D_PLUGIN_BUILD_ASSIMP=ON \
         -DF3D_PLUGIN_BUILD_DRACO=ON \
-        -DF3D_PLUGIN_BUILD_HDF=OFF \
+        -DF3D_PLUGIN_BUILD_HDF=ON \
         -DF3D_PLUGIN_BUILD_OCCT=ON \
+        -DF3D_PLUGIN_BUILD_PDAL=OFF \
+        -DF3D_PLUGIN_BUILD_USD=${USD_FLAG} \
+        -DF3D_PLUGIN_BUILD_VDB=ON \
         -DF3D_PLUGIN_BUILD_WEBIFC=ON \
         -DF3D_STRICT_BUILD=ON \
         -DF3D_BINDINGS_JAVA=ON"
@@ -178,12 +188,17 @@ for arch in "${ARCHS[@]}"; do
 
     STRIP_CMD="/ndk/toolchains/llvm/prebuilt/linux-x86_64/bin/llvm-strip --strip-all /src/build-${arch}/lib/libf3d-java.so"
 
+    DOCKER_CMD="$CONFIG_CMD && $BUILD_CMD && $STRIP_CMD"
+    if [[ "$USD_FLAG" == "ON" ]]; then
+        DOCKER_CMD="$DOCKER_CMD && cp -r /depends/lib/usd /src/build-${arch}/lib/"
+    fi
+
     docker run --rm \
         -e CMAKE_BUILD_PARALLEL_LEVEL \
         -u "$(id -u):$(id -g)" \
         -v "$CLONE_DIR":/src \
         "ghcr.io/f3d-app/f3d-android-${arch}" \
-        sh -c "$CONFIG_CMD && $BUILD_CMD && $STRIP_CMD"
+        sh -c "$DOCKER_CMD"
 
     # Copy .so into the Android project
     SO_SRC="$CLONE_DIR/build-${arch}/lib/libf3d-java.so"
@@ -212,6 +227,30 @@ fi
 LIBS_DIR="$SCRIPT_DIR/f3d/libs"
 mkdir -p "$LIBS_DIR"
 cp "$JAR_SRC" "$LIBS_DIR/f3d.jar"
+
+# ── Copy USD plugins ────────────────────────────────────────────────────────
+
+# The USD plugins are architecture-independent; find the first 64-bit arch built
+USD_SRC_ARCH=""
+for arch in "${ARCHS[@]}"; do
+    case "$arch" in
+        armeabi-v7a|x86) continue ;;
+    esac
+    if [[ -d "$CLONE_DIR/build-${arch}/lib/usd" ]]; then
+        USD_SRC_ARCH="$arch"
+        break
+    fi
+done
+
+if [[ -n "$USD_SRC_ARCH" ]]; then
+    USD_PLUGINS_SRC="$CLONE_DIR/build-${USD_SRC_ARCH}/lib/usd"
+    DATA_DIR="$SCRIPT_DIR/f3d/src/main/assets"
+    mkdir -p "$DATA_DIR"
+    cp -r "$USD_PLUGINS_SRC" "$DATA_DIR/usd"
+    echo "Copied USD plugins from build-${USD_SRC_ARCH} -> assets/usd/"
+else
+    echo "No 64-bit arch built; skipping USD plugins copy."
+fi
 
 # ── Summary ──────────────────────────────────────────────────────────────────
 
