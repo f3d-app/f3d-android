@@ -24,6 +24,8 @@ class MainView(context: Context) : GLSurfaceView(context) {
     private val mRotateDetector: RotateGestureDetector
     private var mActiveUri: Uri? = null
 
+    var last = System.nanoTime()
+
     init {
         start()
 
@@ -40,7 +42,7 @@ class MainView(context: Context) : GLSurfaceView(context) {
         preserveEGLContextOnPause = true
 
         this.setRenderer(Renderer())
-        this.renderMode = RENDERMODE_WHEN_DIRTY
+        this.renderMode = RENDERMODE_CONTINUOUSLY
     }
 
     fun loadFile() {
@@ -73,6 +75,13 @@ class MainView(context: Context) : GLSurfaceView(context) {
     private inner class Renderer : GLSurfaceView.Renderer {
         override fun onDrawFrame(gl: GL10?) {
             this@MainView.loadFile()
+
+            val now = System.nanoTime()
+            val dt = (now - last) / 1e6
+            last = now
+
+            Log.debug("frame dt = $dt ms")
+
             this@MainView.mEngine!!.window.render()
         }
 
@@ -94,9 +103,7 @@ class MainView(context: Context) : GLSurfaceView(context) {
                 this@MainView.context.cacheDir.absolutePath
             )
 
-            this@MainView.mEngine!!.options.toggle("ui.axis")
             this@MainView.mEngine!!.options.toggle("render.grid.enable")
-            this@MainView.mEngine!!.options.toggle("render.effect.antialiasing.enable")
             this@MainView.mEngine!!.options.toggle("render.effect.tone_mapping")
             this@MainView.mEngine!!.options.toggle("render.hdri.ambient")
             this@MainView.mEngine!!.options.toggle("ui.loader_progress")
@@ -140,7 +147,6 @@ class MainView(context: Context) : GLSurfaceView(context) {
         override fun onScale(detector: ScaleGestureDetector): Boolean {
             this@MainView.mEngine!!.window.camera
                 .dolly(detector.getScaleFactor().toDouble())
-            this@MainView.requestRender()
             return true
         }
     }
@@ -174,8 +180,6 @@ class MainView(context: Context) : GLSurfaceView(context) {
                 motion[1] + pos[1],
                 motion[2] + pos[2]
             )
-
-            this@MainView.requestRender()
         }
     }
 
@@ -189,8 +193,6 @@ class MainView(context: Context) : GLSurfaceView(context) {
 
             camera.azimuth(detector.distanceX * deltaAzimuth)
             camera.elevation(detector.distanceY * deltaElevation)
-
-            this@MainView.requestRender()
         }
     }
 
