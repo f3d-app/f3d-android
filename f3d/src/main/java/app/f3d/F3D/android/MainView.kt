@@ -10,6 +10,9 @@ import android.view.ScaleGestureDetector.SimpleOnScaleGestureListener
 import app.f3d.F3D.Engine
 import app.f3d.F3D.Image
 import app.f3d.F3D.Log
+import app.f3d.F3D.Options
+import app.f3d.F3D.android.Utils.OptionSpec
+import app.f3d.F3D.android.Utils.OptionWidget
 import app.f3d.F3D.android.PanGestureDetector.OnPanGestureListener
 import app.f3d.F3D.android.RotateGestureDetector.OnRotateGestureListener
 import com.google.android.material.snackbar.Snackbar
@@ -131,6 +134,72 @@ class MainView(context: Context) : GLSurfaceView(context) {
 
     fun renderToImage(): Image {
         return mEngine!!.window.renderToImage()
+    }
+
+    fun snapshotOptions(specs: List<OptionSpec>, onReady: (List<OptionWidget>) -> Unit) {
+        val engine = mEngine
+        if (engine == null) {
+            onReady(emptyList())
+            return
+        }
+        queueEvent {
+            val widgets = specs.mapNotNull { resolveWidget(engine.options, it) }
+            post { onReady(widgets) }
+        }
+    }
+
+    private fun resolveWidget(opts: Options, spec: OptionSpec): OptionWidget? = try {
+        when (opts.getType(spec.name)) {
+            Options.OptionType.BOOL ->
+                OptionWidget.Toggle(spec, if (opts.hasValue(spec.name)) opts.getAsBool(spec.name) else false)
+            Options.OptionType.COLOR ->
+                OptionWidget.Color(
+                    spec,
+                    if (opts.hasValue(spec.name)) opts.getAsDoubleVector(spec.name)
+                    else doubleArrayOf(0.0, 0.0, 0.0)
+                )
+            Options.OptionType.STRING ->
+                if (opts.hasDomain(spec.name) && opts.getDomainStyle(spec.name) == Options.DomainStyle.ENUM) {
+                    OptionWidget.Enum(
+                        spec,
+                        opts.getEnumDomain(spec.name),
+                        if (opts.hasValue(spec.name)) opts.getAsStringRepresentation(spec.name) else ""
+                    )
+                } else {
+                    null
+                }
+            Options.OptionType.DIRECTION ->
+                OptionWidget.Enum(
+                    spec,
+                    listOf("+Y", "+Z"),
+                    if (opts.hasValue(spec.name)) opts.getAsStringRepresentation(spec.name) else ""
+                )
+            Options.OptionType.DOUBLE, Options.OptionType.RATIO ->
+                if (opts.hasDomain(spec.name) && opts.getDomainStyle(spec.name) == Options.DomainStyle.RANGE) {
+                    val range = opts.getRangeDomainAsDouble(spec.name)
+                    OptionWidget.Range(
+                        spec,
+                        range.min,
+                        range.max,
+                        range.increment,
+                        if (opts.hasValue(spec.name)) opts.getAsDouble(spec.name) else range.min
+                    )
+                } else {
+                    null
+                }
+            else -> null
+        }
+    } catch (e: Exception) {
+        null
+    }
+
+    fun applyOption(action: (Options) -> Unit) {
+        queueEvent {
+            mEngine?.let {
+                action(it.options)
+                requestRender()
+            }
+        }
     }
 
     fun rotateCamera(azimuth: Double, elevation: Double) {

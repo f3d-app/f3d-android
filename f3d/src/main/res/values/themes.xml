@@ -14,4 +14,12 @@
         <item name="android:windowActionBar">false</item>
         <item name="android:windowNoTitle">true</item>
     </style>
+
+    <style name="Theme.F3D.OptionsPanel" parent="Theme.Material3.Dark">
+        <item name="colorPrimary">@color/yellow</item>
+        <item name="colorOnPrimary">@color/black</item>
+        <item name="colorSurface">@color/panel_surface</item>
+        <item name="colorSurfaceContainerLow">@color/panel_surface</item>
+        <item name="colorSurfaceContainerHigh">@color/panel_card</item>
+    </style>
 </resources>

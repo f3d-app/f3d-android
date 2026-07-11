@@ -4,6 +4,7 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
 import android.view.View
+import android.widget.ImageButton
 import androidx.activity.result.ActivityResultLauncher
 import androidx.appcompat.app.AppCompatActivity
 import androidx.constraintlayout.widget.ConstraintLayout
@@ -21,10 +22,15 @@ class MainActivity : AppCompatActivity() {
         val mainLayout = findViewById<ConstraintLayout>(R.id.mainLayout)
 
         val addButton = findViewById<FloatingActionButton>(R.id.addButton)
+        val menuButton = findViewById<ImageButton>(R.id.menuButton)
 
         supportActionBar!!.hide()
 
         mView = MainView(this)
+
+        menuButton.setOnClickListener { _: View? ->
+            OptionsPanel(this, mView!!).show()
+        }
 
         handleSelectedFileAppNotOpen()
 
@@ -36,7 +42,7 @@ class MainActivity : AppCompatActivity() {
             fileInteractionLauncher!!.launch(null)
         }
 
-        mainLayout.addView(mView)
+        mainLayout.addView(mView, 0)
     }
 
     private fun handleSelectedFile(uri: Uri?) {
