@@ -42,7 +42,10 @@ class MainActivityTest {
     /** Extract the MainView from an activity's layout. */
     private fun getMainView(activity: MainActivity): MainView {
         val mainLayout = activity.findViewById<ConstraintLayout>(R.id.mainLayout)
-        return mainLayout.getChildAt(mainLayout.childCount - 1) as MainView
+        return (0 until mainLayout.childCount)
+                .map { mainLayout.getChildAt(it) }
+                .filterIsInstance<MainView>()
+                .first()
     }
 
     /** Render to an image on the GL thread and return it. */
