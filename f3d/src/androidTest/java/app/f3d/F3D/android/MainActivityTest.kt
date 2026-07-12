@@ -233,4 +233,39 @@ class MainActivityTest {
 
         scenario.close()
     }
+
+    // Open a file, change an option as the options panel would, and verify the render reflects it
+    @Test
+    fun testChangeOption() {
+        val testFile = "data/f3d.glb".copyTestAsset("f3d.glb")
+
+        val intent = Intent(Intent.ACTION_VIEW).apply {
+            setDataAndType(Uri.fromFile(testFile), "*/*")
+            setClassName(context, "app.f3d.F3D.android.MainActivity")
+        }
+
+        val scenario = ActivityScenario.launch<MainActivity>(intent)
+
+        Thread.sleep(3000)
+
+        // Change the background color option, as the options panel color picker would
+        scenario.onActivity { activity ->
+            val mainView = getMainView(activity!!)
+            val latch = CountDownLatch(1)
+            mainView.applyOption {
+                it.setAsDoubleVector("render.background.color", doubleArrayOf(1.0, 0.0, 0.0))
+                latch.countDown()
+            }
+            latch.await(5, TimeUnit.SECONDS)
+        }
+
+        Thread.sleep(1000)
+
+        scenario.onActivity { activity ->
+            val image = captureImage(getMainView(activity!!))
+            assertMatchesBaseline(image, "testChangeOption")
+        }
+
+        scenario.close()
+    }
 }
