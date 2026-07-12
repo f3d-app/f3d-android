@@ -36,6 +36,7 @@ class OptionsPanel(baseContext: Context, private val view: MainView) {
     /** Invoked when the panel is dismissed, whether by [dismiss] or a swipe. */
     var onDismiss: (() -> Unit)? = null
     private var dialog: SideSheetDialog? = null
+    private var container: LinearLayout? = null
 
     fun show() {
         view.snapshotOptions(OptionsRegistry.v1) { widgets -> buildAndShow(widgets) }
@@ -46,35 +47,67 @@ class OptionsPanel(baseContext: Context, private val view: MainView) {
     }
 
     private fun buildAndShow(widgets: List<OptionWidget>) {
-        val container = LinearLayout(context).apply {
+        val root = LinearLayout(context).apply {
             orientation = LinearLayout.VERTICAL
             setPadding(dp(20), dp(20), dp(20), dp(24))
         }
+        container = root
+        populate(widgets)
 
-        container.addView(TextView(context).apply {
-            text = "Options"
-            textSize = 22f
-            setTextColor(context.getColor(R.color.white))
-        })
+        dialog = SideSheetDialog(context).apply {
+            setContentView(ScrollView(context).apply { addView(root) })
+            setOnDismissListener { onDismiss?.invoke() }
+            show()
+        }
+    }
+
+    private fun populate(widgets: List<OptionWidget>) {
+        val root = container ?: return
+        root.removeAllViews()
+        root.addView(titleRow())
 
         if (widgets.isEmpty()) {
-            container.addView(TextView(context).apply {
+            root.addView(TextView(context).apply {
                 text = "Options unavailable"
                 setPadding(0, dp(16), 0, 0)
             })
         } else {
             for ((group, groupWidgets) in widgets.groupBy { it.spec.group }) {
-                container.addView(header(group))
+                root.addView(header(group))
                 val card = card()
                 groupWidgets.forEach { card.addView(rowFor(it)) }
-                container.addView(card)
+                root.addView(card)
             }
         }
+    }
 
-        dialog = SideSheetDialog(context).apply {
-            setContentView(ScrollView(context).apply { addView(container) })
-            setOnDismissListener { onDismiss?.invoke() }
-            show()
+    private fun titleRow(): View {
+        val title = TextView(context).apply {
+            text = "Options"
+            textSize = 22f
+            setTextColor(context.getColor(R.color.white))
+            layoutParams = LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f)
+        }
+        val reset = TextView(context).apply {
+            text = "Reset"
+            textSize = 14f
+            setTextColor(context.getColor(R.color.yellow))
+            setPadding(dp(12), dp(6), dp(12), dp(6))
+            isClickable = true
+            val bg = android.util.TypedValue()
+            context.theme.resolveAttribute(
+                android.R.attr.selectableItemBackgroundBorderless, bg, true
+            )
+            setBackgroundResource(bg.resourceId)
+            setOnClickListener {
+                view.resetOptions(OptionsRegistry.v1) { widgets -> populate(widgets) }
+            }
+        }
+        return LinearLayout(context).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+            addView(title)
+            addView(reset)
         }
     }
 

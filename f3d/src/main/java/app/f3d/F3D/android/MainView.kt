@@ -106,9 +106,7 @@ class MainView(context: Context) : GLSurfaceView(context) {
                 this@MainView.context.cacheDir.absolutePath
             )
 
-            this@MainView.mEngine!!.options.toggle("render.grid.enable")
-            this@MainView.mEngine!!.options.toggle("render.effect.tone_mapping")
-            this@MainView.mEngine!!.options.toggle("render.hdri.ambient")
+            applySceneDefaults(this@MainView.mEngine!!.options)
             this@MainView.mEngine!!.options.toggle("ui.loader_progress")
 
             this@MainView.requestRender()
@@ -146,6 +144,33 @@ class MainView(context: Context) : GLSurfaceView(context) {
             val widgets = specs.mapNotNull { resolveWidget(engine.options, it) }
             post { onReady(widgets) }
         }
+    }
+
+    fun resetOptions(specs: List<OptionSpec>, onReady: (List<OptionWidget>) -> Unit) {
+        val engine = mEngine
+        if (engine == null) {
+            onReady(emptyList())
+            return
+        }
+        queueEvent {
+            specs.forEach { spec ->
+                try {
+                    engine.options.reset(spec.name)
+                } catch (_: Exception) {
+                }
+            }
+            applySceneDefaults(engine.options)
+            requestRender()
+            val widgets = specs.mapNotNull { resolveWidget(engine.options, it) }
+            post { onReady(widgets) }
+        }
+    }
+
+    // Scene options the app enables on top of the libf3d defaults; re-applied after a reset.
+    private fun applySceneDefaults(options: Options) {
+        options.setAsBool("render.grid.enable", true)
+        options.setAsBool("render.effect.tone_mapping", true)
+        options.setAsBool("render.hdri.ambient", true)
     }
 
     private fun resolveWidget(opts: Options, spec: OptionSpec): OptionWidget? = try {
