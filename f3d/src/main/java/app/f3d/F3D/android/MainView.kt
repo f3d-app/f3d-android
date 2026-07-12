@@ -149,21 +149,24 @@ class MainView(context: Context) : GLSurfaceView(context) {
     }
 
     private fun resolveWidget(opts: Options, spec: OptionSpec): OptionWidget? = try {
+        val isSet = opts.hasValue(spec.name)
         when (opts.getType(spec.name)) {
             Options.OptionType.BOOL ->
-                OptionWidget.Toggle(spec, if (opts.hasValue(spec.name)) opts.getAsBool(spec.name) else false)
+                OptionWidget.Toggle(spec, if (isSet) opts.getAsBool(spec.name) else false, isSet)
             Options.OptionType.COLOR ->
                 OptionWidget.Color(
                     spec,
-                    if (opts.hasValue(spec.name)) opts.getAsDoubleVector(spec.name)
-                    else doubleArrayOf(0.0, 0.0, 0.0)
+                    if (isSet) opts.getAsDoubleVector(spec.name)
+                    else doubleArrayOf(0.0, 0.0, 0.0),
+                    isSet
                 )
             Options.OptionType.STRING ->
                 if (opts.hasDomain(spec.name) && opts.getDomainStyle(spec.name) == Options.DomainStyle.ENUM) {
                     OptionWidget.Enum(
                         spec,
                         opts.getEnumDomain(spec.name),
-                        if (opts.hasValue(spec.name)) opts.getAsStringRepresentation(spec.name) else ""
+                        if (isSet) opts.getAsStringRepresentation(spec.name) else "",
+                        isSet
                     )
                 } else {
                     null
@@ -172,7 +175,8 @@ class MainView(context: Context) : GLSurfaceView(context) {
                 OptionWidget.Enum(
                     spec,
                     listOf("+Y", "+Z"),
-                    if (opts.hasValue(spec.name)) opts.getAsStringRepresentation(spec.name) else ""
+                    if (isSet) opts.getAsStringRepresentation(spec.name) else "",
+                    isSet
                 )
             Options.OptionType.DOUBLE, Options.OptionType.RATIO ->
                 if (opts.hasDomain(spec.name) && opts.getDomainStyle(spec.name) == Options.DomainStyle.RANGE) {
@@ -182,7 +186,8 @@ class MainView(context: Context) : GLSurfaceView(context) {
                         range.min,
                         range.max,
                         range.increment,
-                        if (opts.hasValue(spec.name)) opts.getAsDouble(spec.name) else range.min
+                        if (isSet) opts.getAsDouble(spec.name) else range.min,
+                        isSet
                     )
                 } else {
                     null

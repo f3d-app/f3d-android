@@ -14,6 +14,7 @@ import com.google.android.material.floatingactionbutton.FloatingActionButton
 class MainActivity : AppCompatActivity() {
     private var mView: MainView? = null
     private var fileInteractionLauncher: ActivityResultLauncher<Void?>? = null
+    private var optionsPanel: OptionsPanel? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -29,7 +30,19 @@ class MainActivity : AppCompatActivity() {
         mView = MainView(this)
 
         menuButton.setOnClickListener { _: View? ->
-            OptionsPanel(this, mView!!).show()
+            val panel = optionsPanel
+            if (panel != null) {
+                panel.dismiss()
+            } else {
+                optionsPanel = OptionsPanel(this, mView!!).apply {
+                    onDismiss = {
+                        optionsPanel = null
+                        menuButton.setImageResource(R.drawable.ic_baseline_menu_24)
+                    }
+                    show()
+                }
+                menuButton.setImageResource(R.drawable.ic_baseline_close_24)
+            }
         }
 
         handleSelectedFileAppNotOpen()

@@ -5,15 +5,24 @@ data class OptionSpec(val name: String, val label: String, val group: String)
 sealed interface OptionWidget {
     val spec: OptionSpec
 
-    class Toggle(override val spec: OptionSpec, val value: Boolean) : OptionWidget
-    class Enum(override val spec: OptionSpec, val values: List<String>, val current: String) : OptionWidget
-    class Color(override val spec: OptionSpec, val rgb: DoubleArray) : OptionWidget
+    /** Whether the option currently holds a value; false for optional options left unset. */
+    val isSet: Boolean
+
+    class Toggle(override val spec: OptionSpec, val value: Boolean, override val isSet: Boolean) : OptionWidget
+    class Enum(
+        override val spec: OptionSpec,
+        val values: List<String>,
+        val current: String,
+        override val isSet: Boolean,
+    ) : OptionWidget
+    class Color(override val spec: OptionSpec, val rgb: DoubleArray, override val isSet: Boolean) : OptionWidget
     class Range(
         override val spec: OptionSpec,
         val min: Double,
         val max: Double,
         val increment: Double,
         val current: Double,
+        override val isSet: Boolean,
     ) : OptionWidget
 }
 

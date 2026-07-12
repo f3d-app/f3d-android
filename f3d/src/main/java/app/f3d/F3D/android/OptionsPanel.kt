@@ -1,10 +1,12 @@
 package app.f3d.F3D.android
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.graphics.Color
 import android.graphics.drawable.GradientDrawable
 import android.view.ContextThemeWrapper
 import android.view.Gravity
+import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
 import android.widget.LinearLayout
@@ -31,8 +33,16 @@ class OptionsPanel(baseContext: Context, private val view: MainView) {
     private val context: Context =
         ContextThemeWrapper(baseContext, R.style.Theme_F3D_OptionsPanel)
 
+    /** Invoked when the panel is dismissed, whether by [dismiss] or a swipe. */
+    var onDismiss: (() -> Unit)? = null
+    private var dialog: SideSheetDialog? = null
+
     fun show() {
         view.snapshotOptions(OptionsRegistry.v1) { widgets -> buildAndShow(widgets) }
+    }
+
+    fun dismiss() {
+        dialog?.dismiss()
     }
 
     private fun buildAndShow(widgets: List<OptionWidget>) {
@@ -61,16 +71,23 @@ class OptionsPanel(baseContext: Context, private val view: MainView) {
             }
         }
 
-        SideSheetDialog(context).apply {
+        dialog = SideSheetDialog(context).apply {
             setContentView(ScrollView(context).apply { addView(container) })
-        }.show()
+            setOnDismissListener { onDismiss?.invoke() }
+            show()
+        }
     }
 
-    private fun rowFor(widget: OptionWidget): View = when (widget) {
-        is OptionWidget.Toggle -> boolRow(widget)
-        is OptionWidget.Enum -> enumRow(widget)
-        is OptionWidget.Color -> colorRow(widget)
-        is OptionWidget.Range -> rangeRow(widget)
+    private fun rowFor(widget: OptionWidget): View {
+        val row = when (widget) {
+            is OptionWidget.Toggle -> boolRow(widget)
+            is OptionWidget.Enum -> enumRow(widget)
+            is OptionWidget.Color -> colorRow(widget)
+            is OptionWidget.Range -> rangeRow(widget)
+        }
+        // Dim optional options that are currently unset until the user gives them a value
+        row.alpha = if (widget.isSet) 1f else INACTIVE_ALPHA
+        return row
     }
 
     private fun boolRow(widget: OptionWidget.Toggle): View =
@@ -79,6 +96,7 @@ class OptionsPanel(baseContext: Context, private val view: MainView) {
             isChecked = widget.value
             layoutParams = rowParams()
             setOnCheckedChangeListener { _, checked ->
+                alpha = 1f
                 view.applyOption { it.setAsBool(widget.spec.name, checked) }
             }
         }
@@ -96,6 +114,7 @@ class OptionsPanel(baseContext: Context, private val view: MainView) {
             setSimpleItems(widget.values.toTypedArray())
             setText(widget.current, false)
             setOnItemClickListener { _, _, position, _ ->
+                til.alpha = 1f
                 view.applyOption { it.setAsStringRepresentation(widget.spec.name, widget.values[position]) }
             }
         }
@@ -113,21 +132,24 @@ class OptionsPanel(baseContext: Context, private val view: MainView) {
             textSize = 16f
             layoutParams = LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f)
         }
-        return LinearLayout(context).apply {
+        val row = LinearLayout(context).apply {
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER_VERTICAL
             layoutParams = rowParams()
             setPadding(0, dp(6), 0, dp(6))
             addView(label)
             addView(swatch)
-            setOnClickListener {
-                showColorDialog(widget.spec, widget.rgb.copyOf()) {
-                    swatch.background = swatchDrawable(toAndroidColor(it))
-                }
+        }
+        row.setOnClickListener {
+            showColorDialog(widget.spec, widget.rgb.copyOf()) {
+                swatch.background = swatchDrawable(toAndroidColor(it))
+                row.alpha = 1f
             }
         }
+        return row
     }
 
+    @SuppressLint("ClickableViewAccessibility")
     private fun rangeRow(widget: OptionWidget.Range): View {
         val row = LinearLayout(context).apply {
             orientation = LinearLayout.VERTICAL
@@ -146,8 +168,18 @@ class OptionsPanel(baseContext: Context, private val view: MainView) {
                 .coerceIn(widget.min, widget.max).toFloat()
             addOnChangeListener { _, value, fromUser ->
                 if (fromUser) {
+                    row.alpha = 1f
                     view.applyOption { it.setAsDouble(widget.spec.name, value.toDouble()) }
                 }
+            }
+            // Claim the gesture on touch down so the side sheet (and scroll view) don't steal
+            // the horizontal drag as a dismiss/scroll gesture before the slider starts tracking
+            setOnTouchListener { v, event ->
+                when (event.actionMasked) {
+                    MotionEvent.ACTION_DOWN, MotionEvent.ACTION_MOVE ->
+                        v.parent?.requestDisallowInterceptTouchEvent(true)
+                }
+                false
             }
         })
         return row
@@ -235,4 +267,8 @@ class OptionsPanel(baseContext: Context, private val view: MainView) {
 
     private fun dp(value: Int): Int =
         (value * context.resources.displayMetrics.density).toInt()
+
+    private companion object {
+        const val INACTIVE_ALPHA = 0.4f
+    }
 }
