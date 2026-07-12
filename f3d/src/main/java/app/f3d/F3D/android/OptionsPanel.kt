@@ -49,7 +49,7 @@ class OptionsPanel(baseContext: Context, private val view: MainView) {
 
         if (widgets.isEmpty()) {
             container.addView(TextView(context).apply {
-                text = "Load a model to edit options."
+                text = "Options unavailable"
                 setPadding(0, dp(16), 0, 0)
             })
         } else {
