@@ -8,6 +8,11 @@ import android.net.Uri
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.lifecycle.Lifecycle
 import androidx.test.core.app.ActivityScenario
+import androidx.test.espresso.Espresso.onView
+import androidx.test.espresso.action.ViewActions.click
+import androidx.test.espresso.matcher.RootMatchers.isDialog
+import androidx.test.espresso.matcher.ViewMatchers.withId
+import androidx.test.espresso.matcher.ViewMatchers.withText
 import androidx.test.ext.junit.rules.ActivityScenarioRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
@@ -234,7 +239,7 @@ class MainActivityTest {
         scenario.close()
     }
 
-    // Open a file, change an option as the options panel would, and verify the render reflects it
+    // Open a file, toggle an option through the options panel UI, and verify the render reflects it
     @Test
     fun testChangeOption() {
         val testFile = "data/f3d.glb".copyTestAsset("f3d.glb")
@@ -248,16 +253,11 @@ class MainActivityTest {
 
         Thread.sleep(3000)
 
-        // Change the background color option, as the options panel color picker would
-        scenario.onActivity { activity ->
-            val mainView = getMainView(activity!!)
-            val latch = CountDownLatch(1)
-            mainView.applyOption {
-                it.setAsDoubleVector("render.background.color", doubleArrayOf(1.0, 0.0, 0.0))
-                latch.countDown()
-            }
-            latch.await(5, TimeUnit.SECONDS)
-        }
+        // Open the options panel (menu button) and toggle the grid off through the UI.
+        // The panel content is built on the GL thread, so wait for it before matching a widget.
+        onView(withId(R.id.menuButton)).perform(click())
+        Thread.sleep(1000)
+        onView(withText("Grid")).inRoot(isDialog()).perform(click())
 
         Thread.sleep(1000)
 
