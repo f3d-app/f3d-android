@@ -214,6 +214,16 @@ class MainView(context: Context) : GLSurfaceView(context) {
                         if (isSet) opts.getAsDouble(spec.name) else range.min,
                         isSet
                     )
+                } else if (opts.getType(spec.name) == Options.OptionType.RATIO) {
+                    // A ratio without an explicit domain is conceptually a fraction in [0, 1].
+                    OptionWidget.Range(
+                        spec,
+                        0.0,
+                        1.0,
+                        RATIO_INCREMENT,
+                        if (isSet) opts.getAsDouble(spec.name) else 0.0,
+                        isSet
+                    )
                 } else {
                     null
                 }
@@ -307,5 +317,9 @@ class MainView(context: Context) : GLSurfaceView(context) {
         }
 
         return true
+    }
+
+    companion object {
+        private const val RATIO_INCREMENT = 0.05
     }
 }
