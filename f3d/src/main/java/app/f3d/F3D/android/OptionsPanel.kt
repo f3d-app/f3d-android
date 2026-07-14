@@ -156,9 +156,10 @@ class OptionsPanel(baseContext: Context, private val view: MainView) {
     }
 
     private fun colorRow(widget: OptionWidget.Color): View {
+        val currentRgb = widget.rgb.copyOf()
         val swatch = View(context).apply {
             layoutParams = LinearLayout.LayoutParams(dp(28), dp(28))
-            background = swatchDrawable(toAndroidColor(widget.rgb))
+            background = swatchDrawable(toAndroidColor(currentRgb))
         }
         val label = TextView(context).apply {
             text = widget.spec.label
@@ -174,8 +175,9 @@ class OptionsPanel(baseContext: Context, private val view: MainView) {
             addView(swatch)
         }
         row.setOnClickListener {
-            showColorDialog(widget.spec, widget.rgb.copyOf()) {
-                swatch.background = swatchDrawable(toAndroidColor(it))
+            showColorDialog(widget.spec, currentRgb.copyOf()) { applied ->
+                applied.copyInto(currentRgb)
+                swatch.background = swatchDrawable(toAndroidColor(applied))
                 row.alpha = 1f
             }
         }
