@@ -8,6 +8,7 @@ import android.view.ContextThemeWrapper
 import android.view.Gravity
 import android.view.MotionEvent
 import android.view.View
+import android.view.ViewConfiguration
 import android.view.ViewGroup
 import android.widget.LinearLayout
 import android.widget.ScrollView
@@ -22,6 +23,7 @@ import com.google.android.material.sidesheet.SideSheetDialog
 import com.google.android.material.slider.Slider
 import com.google.android.material.textfield.MaterialAutoCompleteTextView
 import com.google.android.material.textfield.TextInputLayout
+import kotlin.math.abs
 
 /**
  * A Material side sheet listing a curated set of libf3d options.
@@ -32,6 +34,8 @@ class OptionsPanel(baseContext: Context, private val view: MainView) {
 
     private val context: Context =
         ContextThemeWrapper(baseContext, R.style.Theme_F3D_OptionsPanel)
+
+    private val touchSlop: Int = ViewConfiguration.get(baseContext).scaledTouchSlop
 
     /** Invoked when the panel is dismissed, whether by [dismiss] or a swipe. */
     var onDismiss: (() -> Unit)? = null
@@ -207,12 +211,30 @@ class OptionsPanel(baseContext: Context, private val view: MainView) {
                     view.applyOption { it.setAsDouble(widget.spec.name, value.toDouble()) }
                 }
             }
-            // Claim the gesture on touch down so the side sheet (and scroll view) don't steal
-            // the horizontal drag as a dismiss/scroll gesture before the slider starts tracking
+            // Claim the gesture on touch down so the side sheet does not steal the horizontal
+            // drag as a dismiss before the slider starts tracking, then hand it back as soon as
+            // the drag turns out to be vertical so the scroll view can scroll the panel.
+            var downX = 0f
+            var downY = 0f
+            var directionSettled = false
             setOnTouchListener { v, event ->
                 when (event.actionMasked) {
-                    MotionEvent.ACTION_DOWN, MotionEvent.ACTION_MOVE ->
+                    MotionEvent.ACTION_DOWN -> {
+                        downX = event.x
+                        downY = event.y
+                        directionSettled = false
                         v.parent?.requestDisallowInterceptTouchEvent(true)
+                    }
+                    MotionEvent.ACTION_MOVE -> if (!directionSettled) {
+                        val dx = abs(event.x - downX)
+                        val dy = abs(event.y - downY)
+                        if (dx > touchSlop || dy > touchSlop) {
+                            directionSettled = true
+                            if (dy > dx) {
+                                v.parent?.requestDisallowInterceptTouchEvent(false)
+                            }
+                        }
+                    }
                 }
                 false
             }
