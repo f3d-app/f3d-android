@@ -10,6 +10,9 @@ import android.view.ScaleGestureDetector.SimpleOnScaleGestureListener
 import app.f3d.F3D.Engine
 import app.f3d.F3D.Image
 import app.f3d.F3D.Log
+import app.f3d.F3D.Options
+import app.f3d.F3D.android.Utils.OptionSpec
+import app.f3d.F3D.android.Utils.OptionWidget
 import app.f3d.F3D.android.PanGestureDetector.OnPanGestureListener
 import app.f3d.F3D.android.RotateGestureDetector.OnRotateGestureListener
 import com.google.android.material.snackbar.Snackbar
@@ -103,9 +106,7 @@ class MainView(context: Context) : GLSurfaceView(context) {
                 this@MainView.context.cacheDir.absolutePath
             )
 
-            this@MainView.mEngine!!.options.toggle("render.grid.enable")
-            this@MainView.mEngine!!.options.toggle("render.effect.tone_mapping")
-            this@MainView.mEngine!!.options.toggle("render.hdri.ambient")
+            applySceneDefaults(this@MainView.mEngine!!.options)
             this@MainView.mEngine!!.options.toggle("ui.loader_progress")
 
             this@MainView.requestRender()
@@ -131,6 +132,114 @@ class MainView(context: Context) : GLSurfaceView(context) {
 
     fun renderToImage(): Image {
         return mEngine!!.window.renderToImage()
+    }
+
+    fun snapshotOptions(specs: List<OptionSpec>, onReady: (List<OptionWidget>) -> Unit) {
+        val engine = mEngine
+        if (engine == null) {
+            onReady(emptyList())
+            return
+        }
+        queueEvent {
+            val widgets = specs.mapNotNull { resolveWidget(engine.options, it) }
+            post { onReady(widgets) }
+        }
+    }
+
+    fun resetOptions(specs: List<OptionSpec>, onReady: (List<OptionWidget>) -> Unit) {
+        val engine = mEngine
+        if (engine == null) {
+            onReady(emptyList())
+            return
+        }
+        queueEvent {
+            specs.forEach { spec ->
+                try {
+                    engine.options.reset(spec.name)
+                } catch (_: Exception) {
+                }
+            }
+            applySceneDefaults(engine.options)
+            requestRender()
+            val widgets = specs.mapNotNull { resolveWidget(engine.options, it) }
+            post { onReady(widgets) }
+        }
+    }
+
+    // Scene options the app enables on top of the libf3d defaults; re-applied after a reset.
+    private fun applySceneDefaults(options: Options) {
+        options.setAsBool("render.grid.enable", true)
+        options.setAsBool("render.effect.tone_mapping", true)
+        options.setAsBool("render.hdri.ambient", true)
+    }
+
+    private fun resolveWidget(opts: Options, spec: OptionSpec): OptionWidget? = try {
+        val isSet = opts.hasValue(spec.name)
+        when (opts.getType(spec.name)) {
+            Options.OptionType.BOOL ->
+                OptionWidget.Toggle(spec, if (isSet) opts.getAsBool(spec.name) else false, isSet)
+            Options.OptionType.COLOR ->
+                OptionWidget.Color(
+                    spec,
+                    if (isSet) opts.getAsDoubleVector(spec.name)
+                    else doubleArrayOf(0.0, 0.0, 0.0),
+                    isSet
+                )
+            Options.OptionType.STRING ->
+                if (opts.hasDomain(spec.name) && opts.getDomainStyle(spec.name) == Options.DomainStyle.ENUM) {
+                    OptionWidget.Enum(
+                        spec,
+                        opts.getEnumDomain(spec.name),
+                        if (isSet) opts.getAsStringRepresentation(spec.name) else "",
+                        isSet
+                    )
+                } else {
+                    null
+                }
+            Options.OptionType.DIRECTION ->
+                OptionWidget.Enum(
+                    spec,
+                    listOf("+Y", "+Z"),
+                    if (isSet) opts.getAsStringRepresentation(spec.name) else "",
+                    isSet
+                )
+            Options.OptionType.DOUBLE, Options.OptionType.RATIO ->
+                if (opts.hasDomain(spec.name) && opts.getDomainStyle(spec.name) == Options.DomainStyle.RANGE) {
+                    val range = opts.getRangeDomainAsDouble(spec.name)
+                    OptionWidget.Range(
+                        spec,
+                        range.min,
+                        range.max,
+                        range.increment,
+                        if (isSet) opts.getAsDouble(spec.name) else range.min,
+                        isSet
+                    )
+                } else if (opts.getType(spec.name) == Options.OptionType.RATIO) {
+                    // A ratio without an explicit domain is conceptually a fraction in [0, 1].
+                    OptionWidget.Range(
+                        spec,
+                        0.0,
+                        1.0,
+                        RATIO_INCREMENT,
+                        if (isSet) opts.getAsDouble(spec.name) else 0.0,
+                        isSet
+                    )
+                } else {
+                    null
+                }
+            else -> null
+        }
+    } catch (e: Exception) {
+        null
+    }
+
+    fun applyOption(action: (Options) -> Unit) {
+        queueEvent {
+            mEngine?.let {
+                action(it.options)
+                requestRender()
+            }
+        }
     }
 
     fun rotateCamera(azimuth: Double, elevation: Double) {
@@ -208,5 +317,9 @@ class MainView(context: Context) : GLSurfaceView(context) {
         }
 
         return true
+    }
+
+    companion object {
+        private const val RATIO_INCREMENT = 0.05
     }
 }

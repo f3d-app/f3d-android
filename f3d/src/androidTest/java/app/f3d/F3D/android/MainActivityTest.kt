@@ -8,6 +8,11 @@ import android.net.Uri
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.lifecycle.Lifecycle
 import androidx.test.core.app.ActivityScenario
+import androidx.test.espresso.Espresso.onView
+import androidx.test.espresso.action.ViewActions.click
+import androidx.test.espresso.matcher.RootMatchers.isDialog
+import androidx.test.espresso.matcher.ViewMatchers.withId
+import androidx.test.espresso.matcher.ViewMatchers.withText
 import androidx.test.ext.junit.rules.ActivityScenarioRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
@@ -42,7 +47,10 @@ class MainActivityTest {
     /** Extract the MainView from an activity's layout. */
     private fun getMainView(activity: MainActivity): MainView {
         val mainLayout = activity.findViewById<ConstraintLayout>(R.id.mainLayout)
-        return mainLayout.getChildAt(mainLayout.childCount - 1) as MainView
+        return (0 until mainLayout.childCount)
+                .map { mainLayout.getChildAt(it) }
+                .filterIsInstance<MainView>()
+                .first()
     }
 
     /** Render to an image on the GL thread and return it. */
@@ -226,6 +234,36 @@ class MainActivityTest {
         scenario.onActivity { activity ->
             val image = captureImage(getMainView(activity!!))
             assertMatchesBaseline(image, "testRotateAndResume")
+        }
+
+        scenario.close()
+    }
+
+    // Open a file, toggle an option through the options panel UI, and verify the render reflects it
+    @Test
+    fun testChangeOption() {
+        val testFile = "data/f3d.glb".copyTestAsset("f3d.glb")
+
+        val intent = Intent(Intent.ACTION_VIEW).apply {
+            setDataAndType(Uri.fromFile(testFile), "*/*")
+            setClassName(context, "app.f3d.F3D.android.MainActivity")
+        }
+
+        val scenario = ActivityScenario.launch<MainActivity>(intent)
+
+        Thread.sleep(3000)
+
+        // Open the options panel (menu button) and toggle the grid off through the UI.
+        // The panel content is built on the GL thread, so wait for it before matching a widget.
+        onView(withId(R.id.menuButton)).perform(click())
+        Thread.sleep(1000)
+        onView(withText("Grid")).inRoot(isDialog()).perform(click())
+
+        Thread.sleep(1000)
+
+        scenario.onActivity { activity ->
+            val image = captureImage(getMainView(activity!!))
+            assertMatchesBaseline(image, "testChangeOption")
         }
 
         scenario.close()

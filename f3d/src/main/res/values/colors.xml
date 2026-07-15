@@ -5,4 +5,7 @@
     <color name="blue">#788BFF</color>
     <color name="black">#141414</color>
     <color name="white">#F4F4F4</color>
+    <color name="panel_surface">#1C1C1E</color>
+    <color name="panel_surface_translucent">#B31C1C1E</color>
+    <color name="panel_card">#2A2A2D</color>
 </resources>
