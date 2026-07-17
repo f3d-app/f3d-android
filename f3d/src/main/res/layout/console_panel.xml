@@ -1,0 +1,166 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/consoleRoot"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fitsSystemWindows="true"
+    android:orientation="vertical">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingStart="16dp"
+        android:paddingEnd="8dp">
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="@string/console"
+            android:textColor="@color/yellow"
+            android:textSize="20sp"
+            android:textStyle="bold" />
+
+        <ImageButton
+            android:id="@+id/consoleClearButton"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/console_clear"
+            app:srcCompat="@drawable/ic_baseline_delete_sweep_24"
+            app:tint="@color/white" />
+
+        <ImageButton
+            android:id="@+id/consoleCloseButton"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/console_close"
+            app:srcCompat="@drawable/ic_baseline_close_24"
+            app:tint="@color/white" />
+
+    </LinearLayout>
+
+    <!-- Filters what is displayed, not what is captured: the buffer keeps every message, so
+         re-enabling a level brings back its history too. -->
+    <HorizontalScrollView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingHorizontal="16dp"
+        android:paddingBottom="4dp"
+        android:scrollbars="none">
+
+        <com.google.android.material.chip.ChipGroup
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:chipSpacingHorizontal="8dp"
+            app:singleLine="true">
+
+            <com.google.android.material.chip.Chip
+                android:id="@+id/filterError"
+                style="@style/Widget.F3D.Chip.LogFilter"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/console_level_error"
+                app:chipBackgroundColor="@color/chip_filter_error" />
+
+            <com.google.android.material.chip.Chip
+                android:id="@+id/filterWarning"
+                style="@style/Widget.F3D.Chip.LogFilter"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/console_level_warning"
+                app:chipBackgroundColor="@color/chip_filter_warning" />
+
+            <com.google.android.material.chip.Chip
+                android:id="@+id/filterInfo"
+                style="@style/Widget.F3D.Chip.LogFilter"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/console_level_info"
+                app:chipBackgroundColor="@color/chip_filter_info" />
+
+            <com.google.android.material.chip.Chip
+                android:id="@+id/filterDebug"
+                style="@style/Widget.F3D.Chip.LogFilter"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/console_level_debug"
+                app:chipBackgroundColor="@color/chip_filter_debug" />
+
+        </com.google.android.material.chip.ChipGroup>
+
+    </HorizontalScrollView>
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1">
+
+        <ScrollView
+            android:id="@+id/consoleScroll"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:paddingHorizontal="16dp"
+            android:paddingVertical="8dp"
+            android:scrollbars="vertical">
+
+            <app.f3d.F3D.android.Utils.NonAutoScrollTextView
+                android:id="@+id/consoleText"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:fontFamily="monospace"
+                android:textIsSelectable="true"
+                android:textSize="12sp" />
+
+        </ScrollView>
+
+        <TextView
+            android:id="@+id/consoleEmpty"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:text="@string/console_empty"
+            android:textColor="@color/log_debug"
+            android:visibility="gone" />
+
+    </FrameLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingStart="16dp"
+        android:paddingEnd="8dp"
+        android:paddingBottom="8dp">
+
+        <AutoCompleteTextView
+            android:id="@+id/consoleInput"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:completionThreshold="1"
+            android:fontFamily="monospace"
+            android:hint="@string/console_command_hint"
+            android:imeOptions="actionSend|flagNoFullscreen"
+            android:inputType="text|textNoSuggestions"
+            android:maxLines="1"
+            android:textColor="@color/white"
+            android:textColorHint="@color/log_debug" />
+
+        <ImageButton
+            android:id="@+id/consoleSendButton"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/console_send"
+            app:srcCompat="@drawable/ic_baseline_send_24"
+            app:tint="@color/yellow" />
+
+    </LinearLayout>
+
+</LinearLayout>

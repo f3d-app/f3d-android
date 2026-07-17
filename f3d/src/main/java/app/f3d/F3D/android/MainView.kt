@@ -27,8 +27,6 @@ class MainView(context: Context) : GLSurfaceView(context) {
     private val mRotateDetector: RotateGestureDetector
     private var mActiveUri: Uri? = null
 
-    var last = System.nanoTime()
-
     init {
         start()
 
@@ -78,12 +76,6 @@ class MainView(context: Context) : GLSurfaceView(context) {
     private inner class Renderer : GLSurfaceView.Renderer {
         override fun onDrawFrame(gl: GL10?) {
             this@MainView.loadFile()
-
-            val now = System.nanoTime()
-            val dt = (now - last) / 1e6
-            last = now
-
-            Log.debug("frame dt = $dt ms")
 
             this@MainView.mEngine!!.window.render()
         }
@@ -239,6 +231,36 @@ class MainView(context: Context) : GLSurfaceView(context) {
                 action(it.options)
                 requestRender()
             }
+        }
+    }
+
+    /** Failures are reported by libf3d through the log, and thus surface in the console. */
+    fun triggerCommand(command: String) {
+        queueEvent {
+            mEngine?.let {
+                try {
+                    it.interactor.triggerCommand(command)
+                } catch (e: Exception) {
+                    Log.error("Command: ${e.message}")
+                }
+                requestRender()
+            }
+        }
+    }
+
+    fun snapshotCommandActions(onReady: (List<String>) -> Unit) {
+        val engine = mEngine
+        if (engine == null) {
+            onReady(emptyList())
+            return
+        }
+        queueEvent {
+            val actions = try {
+                engine.interactor.commandActions
+            } catch (_: Exception) {
+                emptyList()
+            }
+            post { onReady(actions) }
         }
     }
 

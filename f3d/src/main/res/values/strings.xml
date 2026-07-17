@@ -1,4 +1,15 @@
 <resources>
     <string name="app_name">F3D</string>
     <string name="options_panel">Options panel</string>
+    <string name="console">Console</string>
+    <string name="console_clear">Clear console</string>
+    <string name="console_close">Close console</string>
+    <string name="console_command_hint">Type a command</string>
+    <string name="console_send">Run command</string>
+    <string name="console_empty">No log output yet.</string>
+    <string name="console_empty_filtered">No messages match the active filters.</string>
+    <string name="console_level_error">Error</string>
+    <string name="console_level_warning">Warning</string>
+    <string name="console_level_info">Info</string>
+    <string name="console_level_debug">Debug</string>
 </resources>

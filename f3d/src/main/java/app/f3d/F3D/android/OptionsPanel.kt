@@ -11,62 +11,78 @@ import android.view.View
 import android.view.ViewConfiguration
 import android.view.ViewGroup
 import android.widget.LinearLayout
-import android.widget.ScrollView
 import android.widget.SeekBar
 import android.widget.TextView
+import androidx.appcompat.app.AlertDialog
+import androidx.core.widget.NestedScrollView
 import app.f3d.F3D.android.Utils.OptionSpec
 import app.f3d.F3D.android.Utils.OptionWidget
 import app.f3d.F3D.android.Utils.OptionsRegistry
+import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.materialswitch.MaterialSwitch
-import com.google.android.material.sidesheet.SideSheetDialog
 import com.google.android.material.slider.Slider
 import com.google.android.material.textfield.MaterialAutoCompleteTextView
 import com.google.android.material.textfield.TextInputLayout
 import kotlin.math.abs
 
 /**
- * A Material side sheet listing a curated set of libf3d options.
+ * A Material bottom sheet listing a curated set of libf3d options.
  * The widget shown for each option is derived from its type and domain (resolved on the rendering
  * thread by [MainView.snapshotOptions]), so the registry only needs a name and a label.
+ *
+ * The sheet lives in the activity layout rather than in a dialog, so the viewport stays lit and
+ * keeps responding to camera gestures while options are being changed.
  */
-class OptionsPanel(baseContext: Context, private val view: MainView) {
+class OptionsPanel(baseContext: Context, private val view: MainView, private val sheet: View) {
 
     private val context: Context =
         ContextThemeWrapper(baseContext, R.style.Theme_F3D_OptionsPanel)
 
     private val touchSlop: Int = ViewConfiguration.get(baseContext).scaledTouchSlop
 
-    /** Invoked when the panel is dismissed, whether by [dismiss] or a swipe. */
-    var onDismiss: (() -> Unit)? = null
-    private var dialog: SideSheetDialog? = null
-    private var container: LinearLayout? = null
+    private val behavior = BottomSheetBehavior.from(sheet)
+    private val container: LinearLayout = sheet.findViewById(R.id.optionsContainer)
+    private val scroll: NestedScrollView = sheet.findViewById(R.id.optionsScroll)
+
+    val isOpen: Boolean
+        get() = behavior.state != BottomSheetBehavior.STATE_HIDDEN
+
+    init {
+        behavior.state = BottomSheetBehavior.STATE_HIDDEN
+        behavior.addBottomSheetCallback(object : BottomSheetBehavior.BottomSheetCallback() {
+            override fun onStateChanged(bottomSheet: View, newState: Int) {
+                bottomSheet.post { padScrollPastClip(bottomSheet) }
+            }
+
+            override fun onSlide(bottomSheet: View, slideOffset: Float) = Unit
+        })
+    }
+
+    private fun fadeSheet(alpha: Float) {
+        sheet.animate().alpha(alpha).setDuration(FADE_DURATION_MS).start()
+    }
+
+    private fun padScrollPastClip(sheet: View) {
+        val clipped = (sheet.bottom - (sheet.parent as View).height).coerceAtLeast(0)
+        if (scroll.paddingBottom != clipped) {
+            scroll.setPadding(0, 0, 0, clipped)
+        }
+    }
 
     fun show() {
-        view.snapshotOptions(OptionsRegistry.v1) { widgets -> buildAndShow(widgets) }
+        view.snapshotOptions(OptionsRegistry.v1) { widgets ->
+            populate(widgets)
+            behavior.state = BottomSheetBehavior.STATE_COLLAPSED
+        }
     }
 
     fun dismiss() {
-        dialog?.dismiss()
-    }
-
-    private fun buildAndShow(widgets: List<OptionWidget>) {
-        val root = LinearLayout(context).apply {
-            orientation = LinearLayout.VERTICAL
-            setPadding(dp(20), dp(20), dp(20), dp(24))
-        }
-        container = root
-        populate(widgets)
-
-        dialog = SideSheetDialog(context).apply {
-            setContentView(ScrollView(context).apply { addView(root) })
-            setOnDismissListener { onDismiss?.invoke() }
-            show()
-        }
+        behavior.state = BottomSheetBehavior.STATE_HIDDEN
     }
 
     private fun populate(widgets: List<OptionWidget>) {
-        val root = container ?: return
+        val root = container
         root.removeAllViews()
         root.addView(titleRow())
 
@@ -179,7 +195,7 @@ class OptionsPanel(baseContext: Context, private val view: MainView) {
             addView(swatch)
         }
         row.setOnClickListener {
-            showColorDialog(widget.spec, currentRgb.copyOf()) { applied ->
+            showColorDialog(widget.spec, currentRgb.copyOf(), widget.isSet) { applied ->
                 applied.copyInto(currentRgb)
                 swatch.background = swatchDrawable(toAndroidColor(applied))
                 row.alpha = 1f
@@ -211,6 +227,11 @@ class OptionsPanel(baseContext: Context, private val view: MainView) {
                     view.applyOption { it.setAsDouble(widget.spec.name, value.toDouble()) }
                 }
             }
+            addOnSliderTouchListener(object : Slider.OnSliderTouchListener {
+                override fun onStartTrackingTouch(slider: Slider) = fadeSheet(DRAGGING_ALPHA)
+
+                override fun onStopTrackingTouch(slider: Slider) = fadeSheet(1f)
+            })
             // Claim the gesture on touch down so the side sheet does not steal the horizontal
             // drag as a dismiss before the slider starts tracking, then hand it back as soon as
             // the drag turns out to be vertical so the scroll view can scroll the panel.
@@ -242,8 +263,24 @@ class OptionsPanel(baseContext: Context, private val view: MainView) {
         return row
     }
 
-    /** Simple RGB picker: three sliders and a live preview. */
-    private fun showColorDialog(spec: OptionSpec, rgb: DoubleArray, onApplied: (DoubleArray) -> Unit) {
+    /**
+     * Simple RGB picker: three sliders and a live preview. The colour is applied to the scene as
+     * it is dragged, and reverted on cancel, so the render itself acts as the preview.
+     */
+    private fun showColorDialog(
+        spec: OptionSpec,
+        rgb: DoubleArray,
+        wasSet: Boolean,
+        onApplied: (DoubleArray) -> Unit,
+    ) {
+        val initial = rgb.copyOf()
+        var dialog: AlertDialog? = null
+
+        fun fadeChrome(alpha: Float) {
+            fadeSheet(alpha)
+            dialog?.window?.decorView?.animate()?.alpha(alpha)?.setDuration(FADE_DURATION_MS)?.start()
+        }
+
         val preview = View(context).apply {
             layoutParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(48))
             background = roundedColor(toAndroidColor(rgb))
@@ -265,21 +302,36 @@ class OptionsPanel(baseContext: Context, private val view: MainView) {
                     override fun onProgressChanged(s: SeekBar?, value: Int, fromUser: Boolean) {
                         rgb[channel] = value / 255.0
                         preview.background = roundedColor(toAndroidColor(rgb))
+                        if (fromUser) {
+                            view.applyOption { it.setAsDoubleVector(spec.name, rgb) }
+                        }
                     }
-                    override fun onStartTrackingTouch(s: SeekBar?) {}
-                    override fun onStopTrackingTouch(s: SeekBar?) {}
+
+                    override fun onStartTrackingTouch(s: SeekBar?) = fadeChrome(DRAGGING_ALPHA)
+
+                    override fun onStopTrackingTouch(s: SeekBar?) = fadeChrome(1f)
                 })
             })
         }
-        MaterialAlertDialogBuilder(context)
+
+        val revert = {
+            view.applyOption {
+                if (wasSet) {
+                    it.setAsDoubleVector(spec.name, initial)
+                } else {
+                    it.removeValue(spec.name)
+                }
+            }
+        }
+        dialog = MaterialAlertDialogBuilder(context)
             .setTitle(spec.label)
             .setView(content)
-            .setPositiveButton("Apply") { _, _ ->
-                view.applyOption { it.setAsDoubleVector(spec.name, rgb) }
-                onApplied(rgb)
-            }
-            .setNegativeButton("Cancel", null)
-            .show()
+            .setPositiveButton("Apply") { _, _ -> onApplied(rgb) }
+            .setNegativeButton("Cancel") { _, _ -> revert() }
+            .setOnCancelListener { revert() }
+            .create()
+        dialog.window?.setDimAmount(0f)
+        dialog.show()
     }
 
     // --- helpers ---
@@ -327,5 +379,7 @@ class OptionsPanel(baseContext: Context, private val view: MainView) {
 
     private companion object {
         const val INACTIVE_ALPHA = 0.4f
+        const val DRAGGING_ALPHA = 0.15f
+        const val FADE_DURATION_MS = 120L
     }
 }
