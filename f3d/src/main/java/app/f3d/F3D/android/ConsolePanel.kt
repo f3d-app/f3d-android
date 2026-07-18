@@ -32,8 +32,6 @@ class ConsolePanel(baseContext: Context, private val view: MainView) {
 
     private var stickToBottom = true
 
-    private var scrollToBottomOnNextLog = false
-
     private val shownLevels = mutableSetOf(
         Log.VerboseLevel.ERROR,
         Log.VerboseLevel.WARN,
@@ -98,7 +96,7 @@ class ConsolePanel(baseContext: Context, private val view: MainView) {
         if (command.isEmpty()) return
         view.triggerCommand(command)
         input.text.clear()
-        scrollToBottomOnNextLog = true
+        stickToBottom = true
     }
 
     private fun bindFilters(root: View) {
@@ -128,14 +126,13 @@ class ConsolePanel(baseContext: Context, private val view: MainView) {
         }
 
         val sv = scroll ?: return
-        val followTail = !keepScrollPosition && (stickToBottom || scrollToBottomOnNextLog)
-        if (!keepScrollPosition) scrollToBottomOnNextLog = false
+        val followTail = !keepScrollPosition && stickToBottom
         text?.text = render(entries)
         if (followTail) {
             sv.viewTreeObserver.addOnPreDrawListener(object : ViewTreeObserver.OnPreDrawListener {
                 override fun onPreDraw(): Boolean {
                     sv.viewTreeObserver.removeOnPreDrawListener(this)
-                    sv.fullScroll(View.FOCUS_DOWN)
+                    sv.scrollTo(0, text?.height ?: 0)
                     return true
                 }
             })
