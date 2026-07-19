@@ -48,10 +48,14 @@ class OptionsPanel(baseContext: Context, private val view: MainView, private val
     val isOpen: Boolean
         get() = behavior.state != BottomSheetBehavior.STATE_HIDDEN
 
+    /** Notified when the panel opens (true) or fully closes (false). */
+    var onOpenChanged: ((Boolean) -> Unit)? = null
+
     init {
         behavior.state = BottomSheetBehavior.STATE_HIDDEN
         behavior.addBottomSheetCallback(object : BottomSheetBehavior.BottomSheetCallback() {
             override fun onStateChanged(bottomSheet: View, newState: Int) {
+                onOpenChanged?.invoke(newState != BottomSheetBehavior.STATE_HIDDEN)
                 bottomSheet.post { padScrollPastClip(bottomSheet) }
             }
 
@@ -276,8 +280,9 @@ class OptionsPanel(baseContext: Context, private val view: MainView, private val
         val initial = rgb.copyOf()
         var dialog: AlertDialog? = null
 
-        fun fadeChrome(alpha: Float) {
-            fadeSheet(alpha)
+        // While a channel is being dragged, fade the picker itself so the render behind it stays
+        // visible; the options panel is already hidden for the whole picker.
+        fun fadeDialog(alpha: Float) {
             dialog?.window?.decorView?.animate()?.alpha(alpha)?.setDuration(FADE_DURATION_MS)?.start()
         }
 
@@ -307,9 +312,9 @@ class OptionsPanel(baseContext: Context, private val view: MainView, private val
                         }
                     }
 
-                    override fun onStartTrackingTouch(s: SeekBar?) = fadeChrome(DRAGGING_ALPHA)
+                    override fun onStartTrackingTouch(s: SeekBar?) = fadeDialog(DRAGGING_ALPHA)
 
-                    override fun onStopTrackingTouch(s: SeekBar?) = fadeChrome(1f)
+                    override fun onStopTrackingTouch(s: SeekBar?) = fadeDialog(1f)
                 })
             })
         }
@@ -329,9 +334,15 @@ class OptionsPanel(baseContext: Context, private val view: MainView, private val
             .setPositiveButton("Apply") { _, _ -> onApplied(rgb) }
             .setNegativeButton("Cancel") { _, _ -> revert() }
             .setOnCancelListener { revert() }
+            // Hide the options panel entirely while picking, so the whole viewport shows the colour
+            // changing; the picker dialog stays up. Restored however the dialog is dismissed.
+            .setOnDismissListener { fadeSheet(1f) }
             .create()
-        dialog.window?.setDimAmount(0f)
-        dialog.show()
+        dialog?.apply {
+            window?.setDimAmount(0f)
+            setOnShowListener { fadeSheet(0f) }
+            show()
+        }
     }
 
     // --- helpers ---

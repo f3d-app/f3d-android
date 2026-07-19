@@ -40,8 +40,11 @@ class MainActivity : AppCompatActivity() {
         mView = MainView(this)
 
         optionsSheet = findViewById(R.id.optionsSheet)
-        optionsPanel = OptionsPanel(this, mView!!, optionsSheet!!)
-        keepSheetAboveBar()
+        val fabBackdrop = findViewById<View>(R.id.fabBackdrop)
+        optionsPanel = OptionsPanel(this, mView!!, optionsSheet!!).apply {
+            onOpenChanged = { open -> fabBackdrop.visibility = if (open) View.VISIBLE else View.GONE }
+        }
+        keepSheetAboveBar(fabBackdrop)
 
         findViewById<ImageButton>(R.id.optionsButton).setOnClickListener { _: View? ->
             optionsPanel!!.apply { if (isOpen) dismiss() else show() }
@@ -71,16 +74,22 @@ class MainActivity : AppCompatActivity() {
         )
     }
 
-    private fun keepSheetAboveBar() {
+    private fun keepSheetAboveBar(fabBackdrop: View) {
         val host = findViewById<View>(R.id.optionsSheetHost)
         host.outlineProvider = ViewOutlineProvider.BOUNDS
         host.clipToOutline = true
-        bottomAppBar?.addOnLayoutChangeListener { bar, _, top, _, _, _, _, _, _ ->
+        bottomAppBar?.addOnLayoutChangeListener { bar, _, top, _, bottom, _, _, _, _ ->
             val inset = (bar.parent as View).height - top
             val params = host.layoutParams as ViewGroup.MarginLayoutParams
             if (params.bottomMargin != inset) {
                 params.bottomMargin = inset
                 host.post { host.requestLayout() }
+            }
+            // Match the backdrop to the bar so it fills exactly the cradle area, whatever the bar's
+            // measured height (which includes the FAB cradle and the system navigation inset).
+            val barHeight = bottom - top
+            if (fabBackdrop.layoutParams.height != barHeight) {
+                fabBackdrop.layoutParams = fabBackdrop.layoutParams.apply { height = barHeight }
             }
         }
     }
