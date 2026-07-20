@@ -14,6 +14,7 @@ import app.f3d.F3D.android.Utils.ConsoleLog
 import app.f3d.F3D.android.Utils.FileInteractionContract
 import com.google.android.material.bottomappbar.BottomAppBar
 import com.google.android.material.floatingactionbutton.FloatingActionButton
+import com.google.android.material.shape.MaterialShapeDrawable
 
 class MainActivity : AppCompatActivity() {
     private var mView: MainView? = null
@@ -40,11 +41,10 @@ class MainActivity : AppCompatActivity() {
         mView = MainView(this)
 
         optionsSheet = findViewById(R.id.optionsSheet)
-        val fabBackdrop = findViewById<View>(R.id.fabBackdrop)
         optionsPanel = OptionsPanel(this, mView!!, optionsSheet!!).apply {
-            onOpenChanged = { open -> fabBackdrop.visibility = if (open) View.VISIBLE else View.GONE }
+            onSlideOffset = { offset -> setCradleFromSlide(offset) }
         }
-        keepSheetAboveBar(fabBackdrop)
+        keepSheetAboveBar()
         optionsPanel!!.refresh()
 
         findViewById<ImageButton>(R.id.optionsButton).setOnClickListener { _: View? ->
@@ -75,24 +75,23 @@ class MainActivity : AppCompatActivity() {
         )
     }
 
-    private fun keepSheetAboveBar(fabBackdrop: View) {
+    private fun keepSheetAboveBar() {
         val host = findViewById<View>(R.id.optionsSheetHost)
         host.outlineProvider = ViewOutlineProvider.BOUNDS
         host.clipToOutline = true
-        bottomAppBar?.addOnLayoutChangeListener { bar, _, top, _, bottom, _, _, _, _ ->
+        bottomAppBar?.addOnLayoutChangeListener { bar, _, top, _, _, _, _, _, _ ->
             val inset = (bar.parent as View).height - top
             val params = host.layoutParams as ViewGroup.MarginLayoutParams
             if (params.bottomMargin != inset) {
                 params.bottomMargin = inset
                 host.post { host.requestLayout() }
             }
-            // Match the backdrop to the bar so it fills exactly the cradle area, whatever the bar's
-            // measured height (which includes the FAB cradle and the system navigation inset).
-            val barHeight = bottom - top
-            if (fabBackdrop.layoutParams.height != barHeight) {
-                fabBackdrop.layoutParams = fabBackdrop.layoutParams.apply { height = barHeight }
-            }
         }
+    }
+
+    private fun setCradleFromSlide(slideOffset: Float) {
+        val bg = bottomAppBar?.background as? MaterialShapeDrawable ?: return
+        bg.interpolation = (-slideOffset).coerceIn(0f, 1f)
     }
 
     private fun openConsole() {

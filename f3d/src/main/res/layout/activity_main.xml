@@ -53,17 +53,6 @@
 
     </androidx.coordinatorlayout.widget.CoordinatorLayout>
 
-    <!-- Fills the bar's FAB cradle with an opaque backdrop while the options panel is open, so the
-         notch shows the panel colour instead of the viewport. Hidden otherwise, keeping the
-         see-through cradle when the panel is closed. Sized to the bar at runtime. -->
-    <View
-        android:id="@+id/fabBackdrop"
-        android:layout_width="match_parent"
-        android:layout_height="@dimen/bottom_bar_height"
-        android:layout_gravity="bottom"
-        android:background="@color/panel_surface"
-        android:visibility="gone" />
-
     <com.google.android.material.bottomappbar.BottomAppBar
         android:id="@+id/bottomAppBar"
         android:layout_width="match_parent"

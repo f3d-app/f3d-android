@@ -48,19 +48,25 @@ class OptionsPanel(baseContext: Context, private val view: MainView, private val
     val isOpen: Boolean
         get() = behavior.state != BottomSheetBehavior.STATE_HIDDEN
 
-    /** Notified when the panel opens (true) or fully closes (false). */
-    var onOpenChanged: ((Boolean) -> Unit)? = null
+    var onSlideOffset: ((Float) -> Unit)? = null
 
     init {
         behavior.state = BottomSheetBehavior.STATE_HIDDEN
         behavior.addBottomSheetCallback(object : BottomSheetBehavior.BottomSheetCallback() {
             override fun onStateChanged(bottomSheet: View, newState: Int) {
-                onOpenChanged?.invoke(newState != BottomSheetBehavior.STATE_HIDDEN)
+                when (newState) {
+                    BottomSheetBehavior.STATE_HIDDEN -> onSlideOffset?.invoke(-1f)
+                    BottomSheetBehavior.STATE_COLLAPSED,
+                    BottomSheetBehavior.STATE_HALF_EXPANDED,
+                    BottomSheetBehavior.STATE_EXPANDED -> onSlideOffset?.invoke(0f)
+                }
                 bottomSheet.post { padScrollPastClip(bottomSheet) }
             }
 
-            override fun onSlide(bottomSheet: View, slideOffset: Float) =
+            override fun onSlide(bottomSheet: View, slideOffset: Float) {
+                onSlideOffset?.invoke(slideOffset)
                 padScrollPastClip(bottomSheet)
+            }
         })
     }
 
