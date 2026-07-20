@@ -35,7 +35,7 @@ jobs:
       fail-fast: false
       matrix:
         profile: [small_phone, medium_phone, medium_tablet, desktop_large]
-        api: [28, 36]
+        api: [34, 35, 36]
 
     steps:
       - name: Checkout
