@@ -45,6 +45,7 @@ class MainActivity : AppCompatActivity() {
             onOpenChanged = { open -> fabBackdrop.visibility = if (open) View.VISIBLE else View.GONE }
         }
         keepSheetAboveBar(fabBackdrop)
+        optionsPanel!!.refresh()
 
         findViewById<ImageButton>(R.id.optionsButton).setOnClickListener { _: View? ->
             optionsPanel!!.apply { if (isOpen) dismiss() else show() }
@@ -115,6 +116,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun handleSelectedFile(uri: Uri?) {
         mView!!.updateActiveUri(uri)
+        optionsPanel?.refresh()
     }
 
     private fun handleSelectedFileAppNotOpen() {

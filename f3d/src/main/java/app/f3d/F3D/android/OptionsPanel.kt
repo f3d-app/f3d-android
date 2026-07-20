@@ -59,7 +59,8 @@ class OptionsPanel(baseContext: Context, private val view: MainView, private val
                 bottomSheet.post { padScrollPastClip(bottomSheet) }
             }
 
-            override fun onSlide(bottomSheet: View, slideOffset: Float) = Unit
+            override fun onSlide(bottomSheet: View, slideOffset: Float) =
+                padScrollPastClip(bottomSheet)
         })
     }
 
@@ -74,10 +75,26 @@ class OptionsPanel(baseContext: Context, private val view: MainView, private val
         }
     }
 
-    fun show() {
+    private var loaded = false
+
+    fun refresh() {
         view.snapshotOptions(OptionsRegistry.v1) { widgets ->
-            populate(widgets)
+            if (widgets.isNotEmpty()) {
+                populate(widgets)
+                loaded = true
+            }
+        }
+    }
+
+    fun show() {
+        if (loaded) {
             behavior.state = BottomSheetBehavior.STATE_COLLAPSED
+        } else {
+            view.snapshotOptions(OptionsRegistry.v1) { widgets ->
+                populate(widgets)
+                loaded = widgets.isNotEmpty()
+                behavior.state = BottomSheetBehavior.STATE_COLLAPSED
+            }
         }
     }
 
