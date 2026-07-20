@@ -5,13 +5,18 @@ import android.app.Instrumentation
 import android.content.Intent
 import android.content.IntentFilter
 import android.net.Uri
-import androidx.constraintlayout.widget.ConstraintLayout
+import android.view.ViewGroup
 import androidx.lifecycle.Lifecycle
 import androidx.test.core.app.ActivityScenario
 import androidx.test.espresso.Espresso.onView
 import androidx.test.espresso.action.ViewActions.click
+import androidx.test.espresso.action.ViewActions.closeSoftKeyboard
+import androidx.test.espresso.action.ViewActions.typeText
+import androidx.test.espresso.assertion.ViewAssertions.matches
 import androidx.test.espresso.matcher.RootMatchers.isDialog
+import androidx.test.espresso.matcher.ViewMatchers.isDisplayed
 import androidx.test.espresso.matcher.ViewMatchers.withId
+import androidx.test.espresso.matcher.ViewMatchers.withSubstring
 import androidx.test.espresso.matcher.ViewMatchers.withText
 import androidx.test.ext.junit.rules.ActivityScenarioRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -46,7 +51,7 @@ class MainActivityTest {
 
     /** Extract the MainView from an activity's layout. */
     private fun getMainView(activity: MainActivity): MainView {
-        val mainLayout = activity.findViewById<ConstraintLayout>(R.id.mainLayout)
+        val mainLayout = activity.findViewById<ViewGroup>(R.id.mainLayout)
         return (0 until mainLayout.childCount)
                 .map { mainLayout.getChildAt(it) }
                 .filterIsInstance<MainView>()
@@ -253,11 +258,11 @@ class MainActivityTest {
 
         Thread.sleep(3000)
 
-        // Open the options panel (menu button) and toggle the grid off through the UI.
+        // Open the options panel and toggle the grid off through the UI.
         // The panel content is built on the GL thread, so wait for it before matching a widget.
-        onView(withId(R.id.menuButton)).perform(click())
+        onView(withId(R.id.optionsButton)).perform(click())
         Thread.sleep(1000)
-        onView(withText("Grid")).inRoot(isDialog()).perform(click())
+        onView(withText("Grid")).perform(click())
 
         Thread.sleep(1000)
 
@@ -265,6 +270,40 @@ class MainActivityTest {
             val image = captureImage(getMainView(activity!!))
             assertMatchesBaseline(image, "testChangeOption")
         }
+
+        scenario.close()
+    }
+
+    // The console captures libf3d log output and runs commands against the engine. Asserted on
+    // text rather than a rendered baseline: none of it reaches the 3D view.
+    @Test
+    fun testConsole() {
+        val scenario = ActivityScenario.launch(MainActivity::class.java)
+
+        Thread.sleep(3000)
+
+        onView(withId(R.id.consoleButton)).perform(click())
+        Thread.sleep(1000)
+
+        // Plugin loading happens before the console is ever opened, so its output is only there
+        // if the log forwarder was installed early enough and the buffer survives independently.
+        onView(withId(R.id.consoleText))
+            .inRoot(isDialog())
+            .check(matches(withSubstring("Loading plugin")))
+
+        // A rejected command reports itself through the log, which is what surfaces it here.
+        onView(withId(R.id.consoleInput))
+            .inRoot(isDialog())
+            .perform(typeText("not_a_command"), closeSoftKeyboard())
+        onView(withId(R.id.consoleSendButton)).inRoot(isDialog()).perform(click())
+        Thread.sleep(1000)
+        onView(withId(R.id.consoleText))
+            .inRoot(isDialog())
+            .check(matches(withSubstring("is not recognized")))
+
+        onView(withId(R.id.consoleClearButton)).inRoot(isDialog()).perform(click())
+        Thread.sleep(500)
+        onView(withId(R.id.consoleEmpty)).inRoot(isDialog()).check(matches(isDisplayed()))
 
         scenario.close()
     }
