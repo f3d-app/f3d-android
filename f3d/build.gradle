@@ -11,7 +11,7 @@ android {
     defaultConfig {
         applicationId = "app.f3d.F3D.android"
         minSdk = 28
-        targetSdk = 35
+        targetSdk = 36
         versionCode = 1
         versionName = lockFile.version
 

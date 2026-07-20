@@ -5,11 +5,11 @@ Android application built on top of [F3D](https://github.com/f3d-app/f3d).
 ## Prerequisites
 
 - Docker (for building native libraries)
-- Android SDK >= 36
+- Android SDK >= 34
 - Java 17
 
 > [!NOTE]
-> Android >= 9 (API level 28) is needed on a device to install the generated .apk.
+> While only tested on Android 14+ versions, the generated .apk can be installed on Android >= 9 (API level 28).
 
 ## Update Native Libraries
 
@@ -71,7 +71,7 @@ Use the Gradle wrapper to run the tests:
 ```
 
 > [!WARNING]
-> Some tests does image comparison and requires a specific device resolution. Currently, it's only tested on api levels 28 and 36 and with the following emulated devices:
+> Some tests does image comparison and requires a specific device resolution. Currently, it's only tested on api levels 34 to 36 and with the following emulated devices:
 > - small_phone
 > - medium_phone
 > - medium_tablet
