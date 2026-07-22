@@ -53,6 +53,141 @@
 
     </androidx.coordinatorlayout.widget.CoordinatorLayout>
 
+    <LinearLayout
+        android:id="@+id/animInfoBar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="top|center_horizontal"
+        android:layout_marginTop="12dp"
+        android:layout_marginHorizontal="12dp"
+        android:background="@drawable/bg_pill"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingHorizontal="18dp"
+        android:paddingVertical="8dp"
+        android:visibility="gone">
+
+        <TextView
+            android:id="@+id/animNameLabel"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="12dp"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:maxWidth="160dp"
+            android:textColor="@color/white"
+            android:textSize="14sp" />
+
+        <TextView
+            android:id="@+id/animTimeLabel"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:fontFeatureSettings="tnum"
+            android:textColor="@color/white"
+            android:textSize="14sp" />
+
+        <TextView
+            android:id="@+id/animSpeedLabel"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="12dp"
+            android:textColor="@color/yellow"
+            android:textSize="14sp" />
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/animControlBar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom"
+        android:layout_marginBottom="@dimen/anim_controls_bottom_margin"
+        android:orientation="vertical"
+        android:visibility="gone">
+
+        <app.f3d.F3D.android.AnimationSeekBar
+            android:id="@+id/animSeekBar"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="20dp"
+            android:layout_marginBottom="10dp"
+            android:max="1000"
+            android:progressTint="@color/yellow"
+            android:thumbTint="@color/yellow" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingHorizontal="20dp">
+
+            <LinearLayout
+                android:id="@+id/animTransportPill"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:background="@drawable/bg_pill"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:paddingHorizontal="2dp">
+
+                <ImageButton
+                    android:id="@+id/animPrevButton"
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:contentDescription="@string/animation_previous"
+                    android:padding="8dp"
+                    android:visibility="gone"
+                    app:srcCompat="@drawable/ic_baseline_skip_previous_24"
+                    app:tint="@color/white" />
+
+                <ImageButton
+                    android:id="@+id/animPlayButton"
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:contentDescription="@string/animation_play"
+                    android:padding="8dp"
+                    app:srcCompat="@drawable/ic_baseline_play_arrow_24"
+                    app:tint="@color/white" />
+
+                <ImageButton
+                    android:id="@+id/animNextButton"
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:contentDescription="@string/animation_next"
+                    android:padding="8dp"
+                    android:visibility="gone"
+                    app:srcCompat="@drawable/ic_baseline_skip_next_24"
+                    app:tint="@color/white" />
+
+            </LinearLayout>
+
+            <Space
+                android:layout_width="0dp"
+                android:layout_height="1dp"
+                android:layout_weight="1" />
+
+            <TextView
+                android:id="@+id/animSpeedButton"
+                android:layout_width="wrap_content"
+                android:layout_height="40dp"
+                android:background="@drawable/bg_pill"
+                android:clickable="true"
+                android:contentDescription="@string/animation_speed"
+                android:focusable="true"
+                android:gravity="center"
+                android:minWidth="48dp"
+                android:paddingHorizontal="14dp"
+                android:textColor="@color/white"
+                android:textSize="14sp" />
+
+        </LinearLayout>
+
+    </LinearLayout>
+
     <com.google.android.material.bottomappbar.BottomAppBar
         android:id="@+id/bottomAppBar"
         android:layout_width="match_parent"

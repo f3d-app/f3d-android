@@ -21,6 +21,7 @@ class MainActivity : AppCompatActivity() {
     private var fileInteractionLauncher: ActivityResultLauncher<Void?>? = null
     private var optionsPanel: OptionsPanel? = null
     private var consolePanel: ConsolePanel? = null
+    private var animationController: AnimationController? = null
     private var optionsSheet: View? = null
     private var addButton: FloatingActionButton? = null
     private var bottomAppBar: BottomAppBar? = null
@@ -73,6 +74,8 @@ class MainActivity : AppCompatActivity() {
                 ViewGroup.LayoutParams.MATCH_PARENT,
             ),
         )
+
+        animationController = AnimationController(mView!!, mainLayout)
     }
 
     private fun keepSheetAboveBar() {
@@ -111,6 +114,7 @@ class MainActivity : AppCompatActivity() {
         val visibility = if (visible) View.VISIBLE else View.GONE
         bottomAppBar?.visibility = visibility
         addButton?.visibility = visibility
+        animationController?.setHiddenForChrome(!visible)
     }
 
     private fun handleSelectedFile(uri: Uri?) {

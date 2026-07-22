@@ -19,6 +19,17 @@ import com.google.android.material.snackbar.Snackbar
 import javax.microedition.khronos.egl.EGLConfig
 import javax.microedition.khronos.opengles.GL10
 
+/** Snapshot of the loaded scene's animation state. */
+data class AnimationInfo(
+    val available: Int,
+    val min: Double,
+    val max: Double,
+    val names: List<String>,
+    val keyFrames: List<Double>,
+    val activeIndex: Int,
+    val resetPlayback: Boolean,
+)
+
 class MainView(context: Context) : GLSurfaceView(context) {
     private var mEngine: Engine? = null
 
@@ -26,6 +37,24 @@ class MainView(context: Context) : GLSurfaceView(context) {
     private val mPanDetector: PanGestureDetector
     private val mRotateDetector: RotateGestureDetector
     private var mActiveUri: Uri? = null
+
+    private var animAvailable = 0
+    private var animMin = 0.0
+    private var animMax = 0.0
+    private var animNames: List<String> = emptyList()
+    private var animKeyFrames = DoubleArray(0)
+    private var activeAnimation = 0
+    private var isPlaying = false
+    private var speed = 1.0
+    private var currentTime = 0.0
+    private var lastFrameNanos = 0L
+    private var lastProgressNanos = 0L
+
+    var onAnimationLoaded: ((AnimationInfo) -> Unit)? = null
+
+    var onAnimationProgress: ((current: Double, min: Double, max: Double) -> Unit)? = null
+
+    var onPlayStateChanged: ((Boolean) -> Unit)? = null
 
     init {
         start()
@@ -58,12 +87,17 @@ class MainView(context: Context) : GLSurfaceView(context) {
                             this@MainView.mEngine!!.scene.clear()
                             this@MainView.mEngine!!.scene.add(fileBytes)
                             this@MainView.mEngine!!.window.camera.resetToBounds()
+                            refreshAnimationState()
                             mActiveUri = null
                         }
                     }
             } catch (e: Exception) {
                 android.os.Handler(android.os.Looper.getMainLooper()).post {
-                    Snackbar.make(this@MainView, "Failed to load file: " + e.message, Snackbar.LENGTH_SHORT).apply {
+                    Snackbar.make(
+                        this@MainView,
+                        "Failed to load file: " + e.message,
+                        Snackbar.LENGTH_SHORT
+                    ).apply {
                         view.setBackgroundColor(context.getColor(R.color.white))
                         setTextColor(context.getColor(R.color.black))
                     }.show()
@@ -76,6 +110,7 @@ class MainView(context: Context) : GLSurfaceView(context) {
     private inner class Renderer : GLSurfaceView.Renderer {
         override fun onDrawFrame(gl: GL10?) {
             this@MainView.loadFile()
+            this@MainView.advanceAnimation()
 
             this@MainView.mEngine!!.window.render()
         }
@@ -264,6 +299,136 @@ class MainView(context: Context) : GLSurfaceView(context) {
         }
     }
 
+    // --- Animation ---
+
+    private fun refreshAnimationState() {
+        val scene = mEngine?.scene ?: return
+        isPlaying = false
+        speed = 1.0
+        activeAnimation = 0
+        lastFrameNanos = 0L
+        animAvailable = try {
+            scene.availableAnimations()
+        } catch (_: Exception) {
+            0
+        }
+        if (animAvailable > 0) {
+            val range = try {
+                scene.animationTimeRange()
+            } catch (_: Exception) {
+                doubleArrayOf(0.0, 0.0)
+            }
+            animMin = range.getOrElse(0) { 0.0 }
+            animMax = range.getOrElse(1) { 0.0 }
+            animNames = try {
+                scene.animationNames
+            } catch (_: Exception) {
+                emptyList()
+            }
+            animKeyFrames = try {
+                scene.animationKeyFrames
+            } catch (_: Exception) {
+                DoubleArray(0)
+            }
+            currentTime = animMin
+            try {
+                scene.loadAnimationTime(currentTime)
+            } catch (_: Exception) {
+            }
+        } else {
+            animNames = emptyList()
+            animKeyFrames = DoubleArray(0)
+            animMin = 0.0
+            animMax = 0.0
+            currentTime = 0.0
+        }
+        publishAnimationInfo(resetPlayback = true)
+    }
+
+    private fun publishAnimationInfo(resetPlayback: Boolean) {
+        val info = AnimationInfo(
+            animAvailable, animMin, animMax,
+            animNames.toList(), animKeyFrames.toList(), activeAnimation, resetPlayback,
+        )
+        post { onAnimationLoaded?.invoke(info) }
+    }
+
+    private fun advanceAnimation() {
+        if (animAvailable <= 0 || !isPlaying) return
+        val now = System.nanoTime()
+        if (lastFrameNanos != 0L) {
+            val dt = (now - lastFrameNanos) / 1_000_000_000.0
+            val span = animMax - animMin
+            currentTime = if (span > 0.0) {
+                animMin + (((currentTime + dt * speed) - animMin) % span + span) % span
+            } else {
+                animMin
+            }
+            try {
+                mEngine?.scene?.loadAnimationTime(currentTime)
+            } catch (_: Exception) {
+            }
+        }
+        lastFrameNanos = now
+        if (now - lastProgressNanos > PROGRESS_INTERVAL_NANOS) {
+            lastProgressNanos = now
+            postProgress()
+        }
+    }
+
+    private fun postProgress() {
+        val t = currentTime
+        val min = animMin
+        val max = animMax
+        post { onAnimationProgress?.invoke(t, min, max) }
+    }
+
+    fun toggleAnimation() = queueEvent {
+        if (animAvailable <= 0) return@queueEvent
+        isPlaying = !isPlaying
+        lastFrameNanos = 0L
+        val playing = isPlaying
+        post { onPlayStateChanged?.invoke(playing) }
+    }
+
+    fun seekAnimation(fraction: Double) = queueEvent {
+        if (animAvailable <= 0) return@queueEvent
+        currentTime = animMin + fraction.coerceIn(0.0, 1.0) * (animMax - animMin)
+        lastFrameNanos = 0L
+        try {
+            mEngine?.scene?.loadAnimationTime(currentTime)
+        } catch (_: Exception) {
+        }
+        postProgress()
+    }
+
+    fun setAnimationSpeed(multiplier: Double) = queueEvent {
+        speed = multiplier
+    }
+
+    fun selectAnimation(index: Int) = queueEvent {
+        val engine = mEngine ?: return@queueEvent
+        if (animAvailable <= 0) return@queueEvent
+        activeAnimation = index
+        try {
+            engine.options.setAsIntVector("scene.animation.indices", intArrayOf(index))
+            val range = engine.scene.animationTimeRange()
+            animMin = range.getOrElse(0) { 0.0 }
+            animMax = range.getOrElse(1) { 0.0 }
+            animKeyFrames = engine.scene.animationKeyFrames
+            currentTime = animMin
+            lastFrameNanos = 0L
+            engine.scene.loadAnimationTime(currentTime)
+        } catch (_: Exception) {
+        }
+        publishAnimationInfo(resetPlayback = false)
+    }
+
+    override fun onResume() {
+        super.onResume()
+        queueEvent { lastFrameNanos = 0L }
+    }
+
     fun rotateCamera(azimuth: Double, elevation: Double) {
         val window = mEngine!!.window
         val camera = window.camera
@@ -343,5 +508,7 @@ class MainView(context: Context) : GLSurfaceView(context) {
 
     companion object {
         private const val RATIO_INCREMENT = 0.05
+
+        private const val PROGRESS_INTERVAL_NANOS = 33_000_000L
     }
 }

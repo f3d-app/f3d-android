@@ -12,4 +12,9 @@
     <string name="console_level_warning">Warning</string>
     <string name="console_level_info">Info</string>
     <string name="console_level_debug">Debug</string>
+    <string name="animation_play">Play animation</string>
+    <string name="animation_pause">Pause animation</string>
+    <string name="animation_previous">Previous animation</string>
+    <string name="animation_next">Next animation</string>
+    <string name="animation_speed">Playback speed</string>
 </resources>

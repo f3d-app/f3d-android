@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <dimen name="bottom_bar_height">56dp</dimen>
+    <dimen name="anim_controls_bottom_margin">85dp</dimen>
 </resources>
