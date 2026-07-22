@@ -16,7 +16,6 @@ class AnimationController(private val view: MainView, root: View) {
     private val controlBar: View = root.findViewById(R.id.animControlBar)
     private val nameLabel: TextView = root.findViewById(R.id.animNameLabel)
     private val timeLabel: TextView = root.findViewById(R.id.animTimeLabel)
-    private val speedLabel: TextView = root.findViewById(R.id.animSpeedLabel)
     private val playButton: ImageButton = root.findViewById(R.id.animPlayButton)
     private val prevButton: ImageButton = root.findViewById(R.id.animPrevButton)
     private val nextButton: ImageButton = root.findViewById(R.id.animNextButton)
@@ -143,9 +142,7 @@ class AnimationController(private val view: MainView, root: View) {
     }
 
     private fun updateSpeedLabel() {
-        val text = formatSpeed(SPEEDS[speedIndex])
-        speedButton.text = text
-        speedLabel.text = text
+        speedButton.text = formatSpeed(SPEEDS[speedIndex])
     }
 
     private fun updatePlayIcon(playing: Boolean) {
