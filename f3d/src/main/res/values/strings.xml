@@ -17,4 +17,6 @@
     <string name="animation_previous">Previous animation</string>
     <string name="animation_next">Next animation</string>
     <string name="animation_speed">Playback speed</string>
+    <string name="animation_autohide">Auto-hide controls</string>
+    <string name="animation_locked">Keep controls visible</string>
 </resources>

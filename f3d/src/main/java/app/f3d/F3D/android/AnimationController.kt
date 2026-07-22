@@ -1,5 +1,7 @@
 package app.f3d.F3D.android
 
+import android.os.Handler
+import android.os.Looper
 import android.view.View
 import android.widget.ImageButton
 import android.widget.SeekBar
@@ -20,6 +22,7 @@ class AnimationController(private val view: MainView, root: View) {
     private val nextButton: ImageButton = root.findViewById(R.id.animNextButton)
     private val seekBar: AnimationSeekBar = root.findViewById(R.id.animSeekBar)
     private val speedButton: TextView = root.findViewById(R.id.animSpeedButton)
+    private val lockButton: ImageButton = root.findViewById(R.id.animLockButton)
 
     private var hasAnimation = false
     private var hiddenForChrome = false
@@ -28,23 +31,37 @@ class AnimationController(private val view: MainView, root: View) {
     private var speedIndex = DEFAULT_SPEED_INDEX
     private var isSeeking = false
 
+    private var autoHideEnabled = true
+    private var controlsShown = true
+    private val handler = Handler(Looper.getMainLooper())
+    private val hideRunnable = Runnable {
+        controlsShown = false
+        applyVisibility()
+    }
+
     init {
-        playButton.setOnClickListener { view.toggleAnimation() }
-        prevButton.setOnClickListener { step(-1) }
-        nextButton.setOnClickListener { step(+1) }
-        speedButton.setOnClickListener { cycleSpeed() }
+        playButton.setOnClickListener { view.toggleAnimation(); keepAwake() }
+        prevButton.setOnClickListener { step(-1); keepAwake() }
+        nextButton.setOnClickListener { step(+1); keepAwake() }
+        speedButton.setOnClickListener { cycleSpeed(); keepAwake() }
+        lockButton.setOnClickListener { toggleLock() }
 
         seekBar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
             override fun onProgressChanged(sb: SeekBar, progress: Int, fromUser: Boolean) {
-                if (fromUser) view.seekAnimation(progress.toDouble() / sb.max)
+                if (fromUser) {
+                    view.seekAnimation(progress.toDouble() / sb.max)
+                    keepAwake()
+                }
             }
 
             override fun onStartTrackingTouch(sb: SeekBar) {
                 isSeeking = true
+                cancelHide()
             }
 
             override fun onStopTrackingTouch(sb: SeekBar) {
                 isSeeking = false
+                scheduleHide()
             }
         })
 
@@ -53,13 +70,21 @@ class AnimationController(private val view: MainView, root: View) {
         view.onPlayStateChanged = { playing -> updatePlayIcon(playing) }
 
         updateSpeedLabel()
+        updateLockIcon()
     }
 
     /** Hides the controls while another surface (e.g. the console) takes over the screen. */
     fun setHiddenForChrome(hidden: Boolean) {
         hiddenForChrome = hidden
-        applyVisibility()
+        if (hidden) {
+            cancelHide()
+            applyVisibility()
+        } else {
+            keepAwake()
+        }
     }
+
+    fun onViewportInteraction() = keepAwake()
 
     private fun onLoaded(info: AnimationInfo) {
         hasAnimation = info.available > 0
@@ -91,8 +116,10 @@ class AnimationController(private val view: MainView, root: View) {
                 updateSpeedLabel()
                 updatePlayIcon(false)
             }
+            controlsShown = true
         }
         applyVisibility()
+        scheduleHide()
     }
 
     private fun onProgress(current: Double, min: Double, max: Double) {
@@ -129,10 +156,63 @@ class AnimationController(private val view: MainView, root: View) {
             context.getString(if (playing) R.string.animation_pause else R.string.animation_play)
     }
 
+    // --- Auto-hide ---
+
+    private fun keepAwake() {
+        controlsShown = true
+        applyVisibility()
+        scheduleHide()
+    }
+
+    private fun scheduleHide() {
+        handler.removeCallbacks(hideRunnable)
+        if (autoHideEnabled && hasAnimation && !hiddenForChrome) {
+            handler.postDelayed(hideRunnable, HIDE_DELAY_MS)
+        }
+    }
+
+    private fun cancelHide() {
+        handler.removeCallbacks(hideRunnable)
+    }
+
+    private fun toggleLock() {
+        autoHideEnabled = !autoHideEnabled
+        updateLockIcon()
+        if (autoHideEnabled) {
+            keepAwake()
+        } else {
+            cancelHide()
+            controlsShown = true
+            applyVisibility()
+        }
+    }
+
+    private fun updateLockIcon() {
+        lockButton.setImageResource(
+            if (autoHideEnabled) R.drawable.ic_baseline_lock_open_24 else R.drawable.ic_baseline_lock_24
+        )
+        lockButton.contentDescription = context.getString(
+            if (autoHideEnabled) R.string.animation_autohide else R.string.animation_locked
+        )
+    }
+
     private fun applyVisibility() {
-        val visibility = if (hasAnimation && !hiddenForChrome) View.VISIBLE else View.GONE
-        infoBar.visibility = visibility
-        controlBar.visibility = visibility
+        val show = hasAnimation && !hiddenForChrome && (controlsShown || !autoHideEnabled)
+        fadeBar(infoBar, show)
+        fadeBar(controlBar, show)
+    }
+
+    private fun fadeBar(bar: View, show: Boolean) {
+        if (show) {
+            if (bar.visibility != View.VISIBLE) {
+                bar.alpha = 0f
+                bar.visibility = View.VISIBLE
+            }
+            bar.animate().alpha(1f).setDuration(FADE_MS).start()
+        } else if (bar.visibility == View.VISIBLE) {
+            bar.animate().alpha(0f).setDuration(FADE_MS)
+                .withEndAction { bar.visibility = View.GONE }.start()
+        }
     }
 
     private fun formatSpeed(value: Double): String {
@@ -147,5 +227,7 @@ class AnimationController(private val view: MainView, root: View) {
     private companion object {
         val SPEEDS = doubleArrayOf(0.25, 0.5, 1.0, 2.0, 4.0)
         const val DEFAULT_SPEED_INDEX = 2
+        const val HIDE_DELAY_MS = 3000L
+        const val FADE_MS = 200L
     }
 }

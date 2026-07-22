@@ -80,6 +80,7 @@ class MainActivity : AppCompatActivity() {
         )
 
         animationController = AnimationController(mView!!, mainLayout)
+        mView!!.onViewportTouch = { animationController?.onViewportInteraction() }
 
         applyWindowInsets(mainLayout)
     }

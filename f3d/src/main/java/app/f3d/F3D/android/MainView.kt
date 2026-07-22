@@ -56,6 +56,8 @@ class MainView(context: Context) : GLSurfaceView(context) {
 
     var onPlayStateChanged: ((Boolean) -> Unit)? = null
 
+    var onViewportTouch: (() -> Unit)? = null
+
     init {
         start()
 
@@ -495,6 +497,9 @@ class MainView(context: Context) : GLSurfaceView(context) {
     // forward events to rendering thread for it to handle
     @SuppressLint("ClickableViewAccessibility")
     override fun onTouchEvent(event: MotionEvent): Boolean {
+        if (event.actionMasked == MotionEvent.ACTION_DOWN) {
+            onViewportTouch?.invoke()
+        }
         val eventCopy = MotionEvent.obtain(event)
         queueEvent {
             mPanDetector.onTouchEvent(eventCopy)

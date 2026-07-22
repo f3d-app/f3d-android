@@ -101,7 +101,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_gravity="bottom"
-        android:layout_marginBottom="@dimen/anim_controls_bottom_margin"
+        android:layout_marginBottom="0dp"
         android:orientation="vertical"
         android:visibility="gone">
 
@@ -183,6 +183,17 @@
                 android:paddingHorizontal="14dp"
                 android:textColor="@color/white"
                 android:textSize="14sp" />
+
+            <ImageButton
+                android:id="@+id/animLockButton"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:layout_marginStart="8dp"
+                android:background="@drawable/bg_pill"
+                android:contentDescription="@string/animation_autohide"
+                android:padding="8dp"
+                app:srcCompat="@drawable/ic_baseline_lock_open_24"
+                app:tint="@color/white" />
 
         </LinearLayout>
 
