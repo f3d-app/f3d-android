@@ -45,6 +45,7 @@ class MainView(context: Context) : GLSurfaceView(context) {
     private var animKeyFrames = DoubleArray(0)
     private var activeAnimation = 0
     private var isPlaying = false
+    private var scrubbing = false
     private var speed = 1.0
     private var currentTime = 0.0
     private var lastFrameNanos = 0L
@@ -356,7 +357,7 @@ class MainView(context: Context) : GLSurfaceView(context) {
     }
 
     private fun advanceAnimation() {
-        if (animAvailable <= 0 || !isPlaying) return
+        if (animAvailable <= 0 || !isPlaying || scrubbing) return
         val now = System.nanoTime()
         if (lastFrameNanos != 0L) {
             val dt = (now - lastFrameNanos) / 1_000_000_000.0
@@ -406,6 +407,11 @@ class MainView(context: Context) : GLSurfaceView(context) {
 
     fun setAnimationSpeed(multiplier: Double) = queueEvent {
         speed = multiplier
+    }
+
+    fun setScrubbing(scrubbing: Boolean) = queueEvent {
+        this.scrubbing = scrubbing
+        lastFrameNanos = 0L
     }
 
     fun selectAnimation(index: Int) = queueEvent {

@@ -56,11 +56,13 @@ class AnimationController(private val view: MainView, root: View) {
             override fun onStartTrackingTouch(sb: SeekBar) {
                 isSeeking = true
                 cancelHide()
+                view.setScrubbing(true)
             }
 
             override fun onStopTrackingTouch(sb: SeekBar) {
                 isSeeking = false
                 scheduleHide()
+                view.setScrubbing(false)
             }
         })
 
