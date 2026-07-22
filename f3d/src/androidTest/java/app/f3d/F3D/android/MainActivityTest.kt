@@ -6,6 +6,7 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.net.Uri
 import android.view.ViewGroup
+import android.widget.ImageButton
 import androidx.lifecycle.Lifecycle
 import androidx.test.core.app.ActivityScenario
 import androidx.test.espresso.Espresso.onView
@@ -26,6 +27,7 @@ import com.google.android.material.floatingactionbutton.FloatingActionButton
 import java.io.File
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
@@ -304,6 +306,79 @@ class MainActivityTest {
         onView(withId(R.id.consoleClearButton)).inRoot(isDialog()).perform(click())
         Thread.sleep(500)
         onView(withId(R.id.consoleEmpty)).inRoot(isDialog()).check(matches(isDisplayed()))
+
+        scenario.close()
+    }
+
+    /** Launch the activity with the (animated) test model already loaded. */
+    private fun launchWithAnimatedFile(): ActivityScenario<MainActivity> {
+        val testFile = "data/f3d.glb".copyTestAsset("f3d.glb")
+        val intent = Intent(Intent.ACTION_VIEW).apply {
+            setDataAndType(Uri.fromFile(testFile), "*/*")
+            setClassName(context, "app.f3d.F3D.android.MainActivity")
+        }
+        val scenario = ActivityScenario.launch<MainActivity>(intent)
+        Thread.sleep(3000)
+        return scenario
+    }
+
+    // An animated file surfaces the playback controls. They auto-hide after a spell, so a viewport
+    // touch is simulated to bring them back before asserting.
+    @Test
+    fun testAnimationControlsAppear() {
+        val scenario = launchWithAnimatedFile()
+
+        scenario.onActivity { activity -> getMainView(activity!!).onViewportTouch?.invoke() }
+        Thread.sleep(300)
+
+        onView(withId(R.id.animSeekBar)).check(matches(isDisplayed()))
+        onView(withId(R.id.animPlayButton)).check(matches(isDisplayed()))
+
+        scenario.close()
+    }
+
+    // The play button toggles playback, reflected in its content description (Play <-> Pause).
+    @Test
+    fun testAnimationPlayPauseToggle() {
+        val scenario = launchWithAnimatedFile()
+
+        val playDesc = context.getString(R.string.animation_play)
+        val pauseDesc = context.getString(R.string.animation_pause)
+
+        scenario.onActivity { activity ->
+            val button = activity!!.findViewById<ImageButton>(R.id.animPlayButton)
+            assertEquals(playDesc, button.contentDescription.toString())
+            button.performClick()
+        }
+
+        // The toggle hops to the GL thread and posts the play-state change back, so give it a moment.
+        Thread.sleep(500)
+
+        scenario.onActivity { activity ->
+            val button = activity!!.findViewById<ImageButton>(R.id.animPlayButton)
+            assertEquals(pauseDesc, button.contentDescription.toString())
+        }
+
+        scenario.close()
+    }
+
+    // The lock button toggles the auto-hide behavior, reflected in its content description.
+    @Test
+    fun testLockTogglesAutoHide() {
+        val scenario = launchWithAnimatedFile()
+
+        scenario.onActivity { activity ->
+            val lock = activity!!.findViewById<ImageButton>(R.id.animLockButton)
+            assertEquals(
+                context.getString(R.string.animation_autohide),
+                lock.contentDescription.toString()
+            )
+            lock.performClick()
+            assertEquals(
+                context.getString(R.string.animation_locked),
+                lock.contentDescription.toString()
+            )
+        }
 
         scenario.close()
     }
