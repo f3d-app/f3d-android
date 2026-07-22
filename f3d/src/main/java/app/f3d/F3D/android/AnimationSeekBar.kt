@@ -30,8 +30,10 @@ class AnimationSeekBar @JvmOverloads constructor(
         if (keyFrameFractions.isEmpty()) return
 
         val trackWidth = width - paddingLeft - paddingRight
-        val top = paddingTop.toFloat()
-        val bottom = (height - paddingBottom).toFloat()
+        val centerY = height / 2f
+        val halfHeight = 0.6f * (thumb?.intrinsicHeight ?: height) / 2f
+        val top = centerY - halfHeight
+        val bottom = centerY + halfHeight
         for (fraction in keyFrameFractions) {
             val x = paddingLeft + fraction.coerceIn(0f, 1f) * trackWidth
             canvas.drawLine(x, top, x, bottom, tickPaint)
