@@ -10,6 +10,9 @@ import android.widget.ImageButton
 import androidx.activity.result.ActivityResultLauncher
 import androidx.appcompat.app.AppCompatActivity
 import androidx.coordinatorlayout.widget.CoordinatorLayout
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
 import app.f3d.F3D.android.Utils.ConsoleLog
 import app.f3d.F3D.android.Utils.FileInteractionContract
 import com.google.android.material.bottomappbar.BottomAppBar
@@ -21,6 +24,7 @@ class MainActivity : AppCompatActivity() {
     private var fileInteractionLauncher: ActivityResultLauncher<Void?>? = null
     private var optionsPanel: OptionsPanel? = null
     private var consolePanel: ConsolePanel? = null
+    private var animationController: AnimationController? = null
     private var optionsSheet: View? = null
     private var addButton: FloatingActionButton? = null
     private var bottomAppBar: BottomAppBar? = null
@@ -45,6 +49,7 @@ class MainActivity : AppCompatActivity() {
             onSlideOffset = { offset -> setCradleFromSlide(offset) }
         }
         keepSheetAboveBar()
+        keepAnimControlsAboveFab()
         optionsPanel!!.refresh()
 
         findViewById<ImageButton>(R.id.optionsButton).setOnClickListener { _: View? ->
@@ -73,6 +78,45 @@ class MainActivity : AppCompatActivity() {
                 ViewGroup.LayoutParams.MATCH_PARENT,
             ),
         )
+
+        animationController = AnimationController(mView!!, mainLayout)
+        mView!!.onViewportTouch = { animationController?.onViewportInteraction() }
+
+        applyWindowInsets(mainLayout)
+    }
+
+    private fun applyWindowInsets(mainLayout: View) {
+        WindowCompat.setDecorFitsSystemWindows(window, false)
+
+        val infoBar = findViewById<View>(R.id.animInfoBar)
+        val infoBaseTop = (infoBar.layoutParams as ViewGroup.MarginLayoutParams).topMargin
+
+        ViewCompat.setOnApplyWindowInsetsListener(mainLayout) { _, insets ->
+            val top = insets.getInsets(
+                WindowInsetsCompat.Type.statusBars() or WindowInsetsCompat.Type.displayCutout()
+            ).top
+
+            (infoBar.layoutParams as ViewGroup.MarginLayoutParams).let {
+                if (it.topMargin != infoBaseTop + top) {
+                    it.topMargin = infoBaseTop + top
+                    infoBar.requestLayout()
+                }
+            }
+            insets
+        }
+    }
+
+    private fun keepAnimControlsAboveFab() {
+        val controls = findViewById<View>(R.id.animControlBar)
+        val gap = (-15 * resources.displayMetrics.density).toInt()
+        addButton?.addOnLayoutChangeListener { fab, _, top, _, _, _, _, _, _ ->
+            val margin = (fab.parent as View).height - top + gap
+            val params = controls.layoutParams as ViewGroup.MarginLayoutParams
+            if (params.bottomMargin != margin) {
+                params.bottomMargin = margin
+                controls.post { controls.requestLayout() }
+            }
+        }
     }
 
     private fun keepSheetAboveBar() {
@@ -111,6 +155,7 @@ class MainActivity : AppCompatActivity() {
         val visibility = if (visible) View.VISIBLE else View.GONE
         bottomAppBar?.visibility = visibility
         addButton?.visibility = visibility
+        animationController?.setHiddenForChrome(!visible)
     }
 
     private fun handleSelectedFile(uri: Uri?) {
