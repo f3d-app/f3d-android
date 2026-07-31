@@ -238,10 +238,15 @@
                 android:layout_height="match_parent"
                 android:layout_weight="1" />
 
-            <Space
+            <ImageButton
+                android:id="@+id/supportButton"
                 android:layout_width="0dp"
                 android:layout_height="match_parent"
-                android:layout_weight="1" />
+                android:layout_weight="1"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="@string/support"
+                app:srcCompat="@drawable/ic_baseline_support_24"
+                app:tint="@color/white" />
 
         </LinearLayout>
 

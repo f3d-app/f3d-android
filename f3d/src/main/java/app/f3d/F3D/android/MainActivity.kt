@@ -60,6 +60,10 @@ class MainActivity : AppCompatActivity() {
             openConsole()
         }
 
+        findViewById<ImageButton>(R.id.supportButton).setOnClickListener { _: View? ->
+            SupportDialog(this).show()
+        }
+
         handleSelectedFileAppNotOpen()
 
         fileInteractionLauncher = registerForActivityResult(
