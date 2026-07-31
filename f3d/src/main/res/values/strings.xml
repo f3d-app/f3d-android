@@ -27,4 +27,5 @@
     <string name="support_f3d_description">F3D is free and open-source.\nIf you enjoy using it, please consider supporting its development.</string>
     <string name="donate">Donate</string>
     <string name="maybe_later">Maybe later</string>
+    <string name="donate_url" translatable="false">https://donate.stripe.com/4gM00j7tO1w4eAD5J0cs800</string>
 </resources>
