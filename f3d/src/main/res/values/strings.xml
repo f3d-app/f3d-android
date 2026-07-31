@@ -22,4 +22,9 @@
     <string name="options_unavailable">Options unavailable</string>
     <string name="options">Options</string>
     <string name="reset">Reset</string>
+    <string name="support">Support</string>
+    <string name="support_f3d">Support F3D</string>
+    <string name="support_f3d_description">F3D is free and open-source.\nIf you enjoy using it, please consider supporting its development.</string>
+    <string name="donate">Donate</string>
+    <string name="maybe_later">Maybe later</string>
 </resources>
