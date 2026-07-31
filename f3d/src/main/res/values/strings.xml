@@ -19,4 +19,7 @@
     <string name="animation_speed">Playback speed</string>
     <string name="animation_autohide">Auto-hide controls</string>
     <string name="animation_locked">Keep controls visible</string>
+    <string name="options_unavailable">Options unavailable</string>
+    <string name="options">Options</string>
+    <string name="reset">Reset</string>
 </resources>

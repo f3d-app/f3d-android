@@ -25,6 +25,7 @@ import com.google.android.material.slider.Slider
 import com.google.android.material.textfield.MaterialAutoCompleteTextView
 import com.google.android.material.textfield.TextInputLayout
 import kotlin.math.abs
+import kotlin.math.roundToInt
 
 /**
  * A Material bottom sheet listing a curated set of libf3d options.
@@ -58,6 +59,8 @@ class OptionsPanel(baseContext: Context, private val view: MainView, private val
                     BottomSheetBehavior.STATE_HIDDEN -> onSlideOffset?.invoke(-1f)
                     BottomSheetBehavior.STATE_COLLAPSED,
                     BottomSheetBehavior.STATE_HALF_EXPANDED,
+                    BottomSheetBehavior.STATE_DRAGGING,
+                    BottomSheetBehavior.STATE_SETTLING,
                     BottomSheetBehavior.STATE_EXPANDED -> onSlideOffset?.invoke(0f)
                 }
                 bottomSheet.post { padScrollPastClip(bottomSheet) }
@@ -115,7 +118,7 @@ class OptionsPanel(baseContext: Context, private val view: MainView, private val
 
         if (widgets.isEmpty()) {
             root.addView(TextView(context).apply {
-                text = "Options unavailable"
+                text = context.getString(R.string.options_unavailable)
                 setPadding(0, dp(16), 0, 0)
             })
         } else {
@@ -130,13 +133,13 @@ class OptionsPanel(baseContext: Context, private val view: MainView, private val
 
     private fun titleRow(): View {
         val title = TextView(context).apply {
-            text = "Options"
+            text = context.getString(R.string.options)
             textSize = 22f
             setTextColor(context.getColor(R.color.white))
             layoutParams = LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f)
         }
         val reset = TextView(context).apply {
-            text = "Reset"
+            text = context.getString(R.string.reset)
             textSize = 14f
             setTextColor(context.getColor(R.color.yellow))
             setPadding(dp(12), dp(6), dp(12), dp(6))
@@ -245,7 +248,7 @@ class OptionsPanel(baseContext: Context, private val view: MainView, private val
             valueFrom = widget.min.toFloat()
             valueTo = widget.max.toFloat()
             stepSize = widget.increment.toFloat()
-            val steps = Math.round((widget.current - widget.min) / widget.increment)
+            val steps = ((widget.current - widget.min) / widget.increment).roundToInt()
             value = (widget.min + steps * widget.increment)
                 .coerceIn(widget.min, widget.max).toFloat()
             addOnChangeListener { _, value, fromUser ->
@@ -361,7 +364,7 @@ class OptionsPanel(baseContext: Context, private val view: MainView, private val
             // changing; the picker dialog stays up. Restored however the dialog is dismissed.
             .setOnDismissListener { fadeSheet(1f) }
             .create()
-        dialog?.apply {
+        dialog.apply {
             window?.setDimAmount(0f)
             setOnShowListener { fadeSheet(0f) }
             show()

@@ -6,6 +6,7 @@ import android.view.View
 import android.widget.ImageButton
 import android.widget.SeekBar
 import android.widget.TextView
+import androidx.core.view.isVisible
 import java.util.Locale
 
 class AnimationController(private val view: MainView, root: View) {
@@ -208,7 +209,7 @@ class AnimationController(private val view: MainView, root: View) {
                 bar.visibility = View.VISIBLE
             }
             bar.animate().alpha(1f).setDuration(FADE_MS).start()
-        } else if (bar.visibility == View.VISIBLE) {
+        } else if (bar.isVisible) {
             bar.animate().alpha(0f).setDuration(FADE_MS)
                 .withEndAction { bar.visibility = View.GONE }.start()
         }

@@ -259,7 +259,7 @@ class MainView(context: Context) : GLSurfaceView(context) {
                 }
             else -> null
         }
-    } catch (e: Exception) {
+    } catch (_: Exception) {
         null
     }
 
