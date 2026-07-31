@@ -30,7 +30,6 @@ object OptionsRegistry {
     val v1: List<OptionSpec> = listOf(
         OptionSpec("render.grid.enable", "Grid", "Render"),
         OptionSpec("render.grid.reflection", "Grid reflection", "Render"),
-        OptionSpec("render.axes_grid.enable", "Axes grid", "Render"),
         OptionSpec("render.background.color", "Background color", "Render"),
         OptionSpec("render.background.skybox", "Skybox", "Render"),
         OptionSpec("render.background.blur.enable", "Background blur", "Render"),
