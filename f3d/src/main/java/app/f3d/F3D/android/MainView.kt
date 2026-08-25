@@ -17,6 +17,8 @@ import app.f3d.F3D.android.Utils.OptionWidget
 import app.f3d.F3D.android.PanGestureDetector.OnPanGestureListener
 import app.f3d.F3D.android.RotateGestureDetector.OnRotateGestureListener
 import com.google.android.material.snackbar.Snackbar
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
 import javax.microedition.khronos.egl.EGLConfig
 import javax.microedition.khronos.opengles.GL10
 
@@ -101,6 +103,23 @@ class MainView(context: Context) : GLSurfaceView(context) {
         this.mRotateDetector = RotateGestureDetector(RotateListener())
     }
 
+    /**
+     * Close the engine, which owns native resources a garbage collected view never releases.
+     * Called while the rendering thread is still alive: closing needs its GL context, so the
+     * caller waits for the event to run rather than firing and forgetting.
+     */
+    fun destroyEngine() {
+        val latch = CountDownLatch(1)
+        queueEvent {
+            mEngine?.close()
+            mEngine = null
+            latch.countDown()
+        }
+        if (!latch.await(ENGINE_CLOSE_TIMEOUT_S, TimeUnit.SECONDS)) {
+            Log.warn("Engine: the rendering thread did not close it in time")
+        }
+    }
+
     fun start() {
         setEGLConfigChooser(8, 8, 8, 0, 16, 0)
         setEGLContextClientVersion(3)
@@ -149,14 +168,16 @@ class MainView(context: Context) : GLSurfaceView(context) {
 
     private inner class Renderer : GLSurfaceView.Renderer {
         override fun onDrawFrame(gl: GL10?) {
+            val engine = this@MainView.mEngine ?: return
+
             this@MainView.loadFile()
             this@MainView.advanceAnimation()
 
-            this@MainView.mEngine!!.window.render()
+            engine.window.render()
         }
 
         override fun onSurfaceChanged(gl: GL10?, width: Int, height: Int) {
-            this@MainView.mEngine!!.window.setSize(width, height)
+            this@MainView.mEngine?.window?.setSize(width, height)
             this@MainView.requestRender()
         }
 
@@ -611,5 +632,7 @@ class MainView(context: Context) : GLSurfaceView(context) {
         private const val RATIO_INCREMENT = 0.05
 
         private const val PROGRESS_INTERVAL_NANOS = 33_000_000L
+
+        private const val ENGINE_CLOSE_TIMEOUT_S = 2L
     }
 }

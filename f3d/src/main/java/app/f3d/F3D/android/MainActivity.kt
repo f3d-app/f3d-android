@@ -204,4 +204,9 @@ class MainActivity : AppCompatActivity() {
         super.onResume()
         mView!!.onResume()
     }
+
+    override fun onDestroy() {
+        mView?.destroyEngine()
+        super.onDestroy()
+    }
 }
