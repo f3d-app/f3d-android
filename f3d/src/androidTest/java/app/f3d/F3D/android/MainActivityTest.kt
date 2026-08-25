@@ -8,6 +8,7 @@ import android.net.Uri
 import android.view.ViewGroup
 import android.widget.ImageButton
 import androidx.lifecycle.Lifecycle
+import androidx.recyclerview.widget.RecyclerView
 import androidx.test.core.app.ActivityScenario
 import androidx.test.espresso.Espresso.onView
 import androidx.test.espresso.action.ViewActions.click
@@ -15,7 +16,10 @@ import androidx.test.espresso.action.ViewActions.closeSoftKeyboard
 import androidx.test.espresso.action.ViewActions.typeText
 import androidx.test.espresso.assertion.ViewAssertions.matches
 import androidx.test.espresso.matcher.RootMatchers.isDialog
+import androidx.test.espresso.matcher.ViewMatchers.Visibility
+import androidx.test.espresso.matcher.ViewMatchers.hasSibling
 import androidx.test.espresso.matcher.ViewMatchers.isDisplayed
+import androidx.test.espresso.matcher.ViewMatchers.withEffectiveVisibility
 import androidx.test.espresso.matcher.ViewMatchers.withId
 import androidx.test.espresso.matcher.ViewMatchers.withSubstring
 import androidx.test.espresso.matcher.ViewMatchers.withText
@@ -27,6 +31,7 @@ import com.google.android.material.floatingactionbutton.FloatingActionButton
 import java.io.File
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
+import org.hamcrest.Matchers.allOf
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Rule
@@ -97,14 +102,18 @@ class MainActivityTest {
         }
 
         val baselineImage = Image(baselineFile.absolutePath)
-        val difference = image.compare(baselineImage)
-        println("Image difference: $difference")
+        try {
+            val difference = image.compare(baselineImage)
+            println("Image difference: $difference")
 
-        if (difference > 0.04) {
-            val outputFile = File(context.getExternalFilesDir(null), baselineName)
-            image.save(outputFile.absolutePath)
-            println("Saved rendered image to: ${outputFile.absolutePath}")
-            assertTrue("Rendered image differs from the baseline (diff=$difference, resolution=$resolution)", false)
+            if (difference > 0.04) {
+                val outputFile = File(context.getExternalFilesDir(null), baselineName)
+                image.save(outputFile.absolutePath)
+                println("Saved rendered image to: ${outputFile.absolutePath}")
+                assertTrue("Rendered image differs from the baseline (diff=$difference, resolution=$resolution)", false)
+            }
+        } finally {
+            baselineImage.delete()
         }
     }
 
@@ -155,7 +164,11 @@ class MainActivityTest {
 
         activityRule.scenario.onActivity { activity ->
             val image = captureImage(getMainView(activity!!))
-            assertMatchesBaseline(image, "testOpen")
+            try {
+                assertMatchesBaseline(image, "testOpen")
+            } finally {
+                image.delete()
+            }
         }
     }
 
@@ -175,7 +188,11 @@ class MainActivityTest {
 
         scenario.onActivity { activity ->
             val image = captureImage(getMainView(activity!!))
-            assertMatchesBaseline(image, "testOpen")
+            try {
+                assertMatchesBaseline(image, "testOpen")
+            } finally {
+                image.delete()
+            }
         }
 
         scenario.close()
@@ -199,7 +216,11 @@ class MainActivityTest {
 
         activityRule.scenario.onActivity { activity ->
             val image = captureImage(getMainView(activity!!))
-            assertMatchesBaseline(image, "testOpen")
+            try {
+                assertMatchesBaseline(image, "testOpen")
+            } finally {
+                image.delete()
+            }
         }
     }
 
@@ -240,7 +261,11 @@ class MainActivityTest {
 
         scenario.onActivity { activity ->
             val image = captureImage(getMainView(activity!!))
-            assertMatchesBaseline(image, "testRotateAndResume")
+            try {
+                assertMatchesBaseline(image, "testRotateAndResume")
+            } finally {
+                image.delete()
+            }
         }
 
         scenario.close()
@@ -270,7 +295,11 @@ class MainActivityTest {
 
         scenario.onActivity { activity ->
             val image = captureImage(getMainView(activity!!))
-            assertMatchesBaseline(image, "testChangeOption")
+            try {
+                assertMatchesBaseline(image, "testChangeOption")
+            } finally {
+                image.delete()
+            }
         }
 
         scenario.close()
@@ -311,7 +340,7 @@ class MainActivityTest {
     }
 
     /** Launch the activity with the (animated) test model already loaded. */
-    private fun launchWithAnimatedFile(): ActivityScenario<MainActivity> {
+    private fun launchWithTestFile(): ActivityScenario<MainActivity> {
         val testFile = "data/f3d.glb".copyTestAsset("f3d.glb")
         val intent = Intent(Intent.ACTION_VIEW).apply {
             setDataAndType(Uri.fromFile(testFile), "*/*")
@@ -326,7 +355,7 @@ class MainActivityTest {
     // touch is simulated to bring them back before asserting.
     @Test
     fun testAnimationControlsAppear() {
-        val scenario = launchWithAnimatedFile()
+        val scenario = launchWithTestFile()
 
         scenario.onActivity { activity -> getMainView(activity!!).onViewportTouch?.invoke() }
         Thread.sleep(300)
@@ -340,7 +369,7 @@ class MainActivityTest {
     // The play button toggles playback, reflected in its content description (Play <-> Pause).
     @Test
     fun testAnimationPlayPauseToggle() {
-        val scenario = launchWithAnimatedFile()
+        val scenario = launchWithTestFile()
 
         val playDesc = context.getString(R.string.animation_play)
         val pauseDesc = context.getString(R.string.animation_pause)
@@ -365,7 +394,7 @@ class MainActivityTest {
     // The lock button toggles the auto-hide behavior, reflected in its content description.
     @Test
     fun testLockTogglesAutoHide() {
-        val scenario = launchWithAnimatedFile()
+        val scenario = launchWithTestFile()
 
         scenario.onActivity { activity ->
             val lock = activity!!.findViewById<ImageButton>(R.id.animLockButton)
@@ -378,6 +407,125 @@ class MainActivityTest {
                 context.getString(R.string.animation_locked),
                 lock.contentDescription.toString()
             )
+        }
+
+        scenario.close()
+    }
+
+    /** Open the scene panel and let its content be built off the rendering thread. */
+    private fun openScenePanel() {
+        onView(withId(R.id.sceneButton)).perform(click())
+        Thread.sleep(500)
+    }
+
+    // ListAdapter diffs off the main thread, so the rows land after Espresso considers the app
+    // idle. Waiting on the row count rather than on a delay keeps the assertions deterministic.
+    private fun awaitSceneRows(scenario: ActivityScenario<MainActivity>) {
+        val deadline = System.currentTimeMillis() + 5000
+        var count = 0
+        while (System.currentTimeMillis() < deadline) {
+            scenario.onActivity { activity ->
+                count = activity!!.findViewById<RecyclerView>(R.id.sceneTree).adapter?.itemCount ?: 0
+            }
+            if (count > 0) {
+                return
+            }
+            Thread.sleep(100)
+        }
+        assertTrue("The scene tree stayed empty", false)
+    }
+
+    // The panel lists the hierarchy libf3d reports for the loaded file.
+    @Test
+    fun testScenePanelShowsHierarchy() {
+        val scenario = launchWithTestFile()
+
+        openScenePanel()
+        awaitSceneRows(scenario)
+
+        onView(withId(R.id.sceneTree)).check(matches(isDisplayed()))
+        onView(withText("<stream>")).check(matches(isDisplayed()))
+        onView(withText("<object>")).check(matches(isDisplayed()))
+        onView(withText("<group>")).check(matches(isDisplayed()))
+
+        scenario.close()
+    }
+
+    // The counters come straight from scene.getSceneInfo, pinning what libf3d reports for the
+    // test model.
+    @Test
+    fun testScenePanelShowsCounters() {
+        val scenario = launchWithTestFile()
+
+        openScenePanel()
+        awaitSceneRows(scenario)
+
+        onView(withId(R.id.sceneInfo)).check(matches(isDisplayed()))
+        onView(withId(R.id.sceneInfo)).check(matches(withSubstring("1 actor")))
+        onView(withId(R.id.sceneInfo)).check(matches(withSubstring("24 points")))
+        onView(withId(R.id.sceneInfo)).check(matches(withSubstring("8 cells")))
+
+        scenario.close()
+    }
+
+    // The file name is not shown anywhere else in the app, so the panel title carries it.
+    @Test
+    fun testScenePanelTitleIsFileName() {
+        val scenario = launchWithTestFile()
+
+        openScenePanel()
+        awaitSceneRows(scenario)
+
+        onView(withId(R.id.sceneTitle)).check(matches(withText("f3d.glb")))
+
+        scenario.close()
+    }
+
+    // With nothing loaded the counters make no sense and the title has no file to name.
+    @Test
+    fun testScenePanelEmptyState() {
+        val scenario = ActivityScenario.launch(MainActivity::class.java)
+
+        Thread.sleep(3000)
+
+        openScenePanel()
+
+        onView(withId(R.id.sceneEmpty)).check(matches(isDisplayed()))
+        onView(withId(R.id.sceneInfo)).check(matches(withEffectiveVisibility(Visibility.GONE)))
+        onView(withId(R.id.sceneTitle)).check(matches(withText(R.string.scene)))
+
+        scenario.close()
+    }
+
+    // Hiding a node has to reach the engine, which only the render can confirm. Compared against
+    // the previous frame rather than a baseline, so it holds on every device profile.
+    @Test
+    fun testHideNodeUpdatesRender() {
+        val scenario = launchWithTestFile()
+
+        openScenePanel()
+        awaitSceneRows(scenario)
+
+        var before: Image? = null
+        scenario.onActivity { activity -> before = captureImage(getMainView(activity!!)) }
+
+        onView(allOf(withId(R.id.nodeVisibility), hasSibling(withText("<stream>"))))
+            .perform(click())
+        Thread.sleep(1000)
+
+        scenario.onActivity { activity ->
+            val after = captureImage(getMainView(activity!!))
+            try {
+                val difference = after.compare(before!!)
+                println("Image difference after hiding the root node: $difference")
+                assertTrue(
+                    "Hiding the root node did not change the render (diff=$difference)",
+                    difference > 0.04
+                )
+            } finally {
+                after.delete()
+                before!!.delete()
+            }
         }
 
         scenario.close()
