@@ -51,6 +51,72 @@
 
         </LinearLayout>
 
+        <LinearLayout
+            android:id="@+id/sceneSheet"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="@drawable/bg_bottom_sheet"
+            android:orientation="vertical"
+            android:theme="@style/Theme.F3D.OptionsPanel"
+            app:behavior_expandedOffset="200dp"
+            app:behavior_fitToContents="false"
+            app:behavior_hideable="true"
+            app:behavior_peekHeight="320dp"
+            app:layout_behavior="app.f3d.F3D.android.Utils.HandleOnlyDragBehavior">
+
+            <com.google.android.material.bottomsheet.BottomSheetDragHandleView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content" />
+
+            <TextView
+                android:id="@+id/sceneTitle"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:ellipsize="middle"
+                android:paddingHorizontal="20dp"
+                android:paddingBottom="8dp"
+                android:singleLine="true"
+                android:text="@string/scene"
+                android:textColor="@color/white"
+                android:textSize="22sp" />
+
+            <TextView
+                android:id="@+id/sceneInfo"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:paddingHorizontal="20dp"
+                android:paddingBottom="12dp"
+                android:textColor="@color/log_debug"
+                android:textSize="13sp"
+                android:visibility="gone" />
+
+            <FrameLayout
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:layout_weight="1">
+
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/sceneTree"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:clipToPadding="false"
+                    android:scrollbarThumbVertical="@drawable/scrollbar_thumb"
+                    android:scrollbars="vertical" />
+
+                <TextView
+                    android:id="@+id/sceneEmpty"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="top|center_horizontal"
+                    android:layout_marginTop="32dp"
+                    android:text="@string/scene_empty"
+                    android:textColor="@color/log_debug"
+                    android:textSize="15sp" />
+
+            </FrameLayout>
+
+        </LinearLayout>
+
     </androidx.coordinatorlayout.widget.CoordinatorLayout>
 
     <LinearLayout
@@ -232,11 +298,15 @@
                 android:layout_height="match_parent"
                 android:layout_weight="1.4" />
 
-            <!-- Reserved for future actions. -->
-            <Space
+            <ImageButton
+                android:id="@+id/sceneButton"
                 android:layout_width="0dp"
                 android:layout_height="match_parent"
-                android:layout_weight="1" />
+                android:layout_weight="1"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="@string/scene_panel"
+                app:srcCompat="@drawable/ic_baseline_account_tree_24"
+                app:tint="@color/white" />
 
             <ImageButton
                 android:id="@+id/supportButton"

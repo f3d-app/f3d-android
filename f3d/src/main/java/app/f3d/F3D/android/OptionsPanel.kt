@@ -18,7 +18,6 @@ import androidx.core.widget.NestedScrollView
 import app.f3d.F3D.android.Utils.OptionSpec
 import app.f3d.F3D.android.Utils.OptionWidget
 import app.f3d.F3D.android.Utils.OptionsRegistry
-import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.materialswitch.MaterialSwitch
 import com.google.android.material.slider.Slider
@@ -31,58 +30,16 @@ import kotlin.math.roundToInt
  * A Material bottom sheet listing a curated set of libf3d options.
  * The widget shown for each option is derived from its type and domain (resolved on the rendering
  * thread by [MainView.snapshotOptions]), so the registry only needs a name and a label.
- *
- * The sheet lives in the activity layout rather than in a dialog, so the viewport stays lit and
- * keeps responding to camera gestures while options are being changed.
  */
-class OptionsPanel(baseContext: Context, private val view: MainView, private val sheet: View) {
+class OptionsPanel(baseContext: Context, private val view: MainView, sheet: View) :
+    SheetPanel(sheet, sheet.findViewById<NestedScrollView>(R.id.optionsScroll)) {
 
     private val context: Context =
         ContextThemeWrapper(baseContext, R.style.Theme_F3D_OptionsPanel)
 
     private val touchSlop: Int = ViewConfiguration.get(baseContext).scaledTouchSlop
 
-    private val behavior = BottomSheetBehavior.from(sheet)
     private val container: LinearLayout = sheet.findViewById(R.id.optionsContainer)
-    private val scroll: NestedScrollView = sheet.findViewById(R.id.optionsScroll)
-
-    val isOpen: Boolean
-        get() = behavior.state != BottomSheetBehavior.STATE_HIDDEN
-
-    var onSlideOffset: ((Float) -> Unit)? = null
-
-    init {
-        behavior.state = BottomSheetBehavior.STATE_HIDDEN
-        behavior.addBottomSheetCallback(object : BottomSheetBehavior.BottomSheetCallback() {
-            override fun onStateChanged(bottomSheet: View, newState: Int) {
-                when (newState) {
-                    BottomSheetBehavior.STATE_HIDDEN -> onSlideOffset?.invoke(-1f)
-                    BottomSheetBehavior.STATE_COLLAPSED,
-                    BottomSheetBehavior.STATE_HALF_EXPANDED,
-                    BottomSheetBehavior.STATE_DRAGGING,
-                    BottomSheetBehavior.STATE_SETTLING,
-                    BottomSheetBehavior.STATE_EXPANDED -> onSlideOffset?.invoke(0f)
-                }
-                bottomSheet.post { padScrollPastClip(bottomSheet) }
-            }
-
-            override fun onSlide(bottomSheet: View, slideOffset: Float) {
-                onSlideOffset?.invoke(slideOffset)
-                padScrollPastClip(bottomSheet)
-            }
-        })
-    }
-
-    private fun fadeSheet(alpha: Float) {
-        sheet.animate().alpha(alpha).setDuration(FADE_DURATION_MS).start()
-    }
-
-    private fun padScrollPastClip(sheet: View) {
-        val clipped = (sheet.bottom - (sheet.parent as View).height).coerceAtLeast(0)
-        if (scroll.paddingBottom != clipped) {
-            scroll.setPadding(0, 0, 0, clipped)
-        }
-    }
 
     private var loaded = false
 
@@ -95,20 +52,16 @@ class OptionsPanel(baseContext: Context, private val view: MainView, private val
         }
     }
 
-    fun show() {
+    override fun show() {
         if (loaded) {
-            behavior.state = BottomSheetBehavior.STATE_COLLAPSED
+            openSheet()
         } else {
             view.snapshotOptions(OptionsRegistry.v1) { widgets ->
                 populate(widgets)
                 loaded = widgets.isNotEmpty()
-                behavior.state = BottomSheetBehavior.STATE_COLLAPSED
+                openSheet()
             }
         }
-    }
-
-    fun dismiss() {
-        behavior.state = BottomSheetBehavior.STATE_HIDDEN
     }
 
     private fun populate(widgets: List<OptionWidget>) {
@@ -417,6 +370,5 @@ class OptionsPanel(baseContext: Context, private val view: MainView, private val
     private companion object {
         const val INACTIVE_ALPHA = 0.4f
         const val DRAGGING_ALPHA = 0.15f
-        const val FADE_DURATION_MS = 120L
     }
 }

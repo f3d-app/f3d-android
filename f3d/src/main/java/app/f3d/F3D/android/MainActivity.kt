@@ -23,6 +23,7 @@ class MainActivity : AppCompatActivity() {
     private var mView: MainView? = null
     private var fileInteractionLauncher: ActivityResultLauncher<Void?>? = null
     private var optionsPanel: OptionsPanel? = null
+    private var scenePanel: ScenePanel? = null
     private var consolePanel: ConsolePanel? = null
     private var animationController: AnimationController? = null
     private var optionsSheet: View? = null
@@ -46,14 +47,23 @@ class MainActivity : AppCompatActivity() {
 
         optionsSheet = findViewById(R.id.optionsSheet)
         optionsPanel = OptionsPanel(this, mView!!, optionsSheet!!).apply {
-            onSlideOffset = { offset -> setCradleFromSlide(offset) }
+            onSlideOffset = { updateCradle() }
+        }
+        scenePanel = ScenePanel(this, mView!!, findViewById(R.id.sceneSheet)).apply {
+            onSlideOffset = { updateCradle() }
         }
         keepSheetAboveBar()
         keepAnimControlsAboveFab()
         optionsPanel!!.refresh()
 
         findViewById<ImageButton>(R.id.optionsButton).setOnClickListener { _: View? ->
+            scenePanel!!.dismiss()
             optionsPanel!!.apply { if (isOpen) dismiss() else show() }
+        }
+
+        findViewById<ImageButton>(R.id.sceneButton).setOnClickListener { _: View? ->
+            optionsPanel!!.dismiss()
+            scenePanel!!.apply { if (isOpen) dismiss() else show() }
         }
 
         findViewById<ImageButton>(R.id.consoleButton).setOnClickListener { _: View? ->
@@ -85,6 +95,7 @@ class MainActivity : AppCompatActivity() {
 
         animationController = AnimationController(mView!!, mainLayout)
         mView!!.onViewportTouch = { animationController?.onViewportInteraction() }
+        mView!!.onSceneLoaded = { scenePanel?.refresh() }
 
         applyWindowInsets(mainLayout)
     }
@@ -137,14 +148,16 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun setCradleFromSlide(slideOffset: Float) {
+    private fun updateCradle() {
         val bg = bottomAppBar?.background as? MaterialShapeDrawable ?: return
-        bg.interpolation = (-slideOffset).coerceIn(0f, 1f)
+        val offset = maxOf(optionsPanel?.slideOffset ?: -1f, scenePanel?.slideOffset ?: -1f)
+        bg.interpolation = (-offset).coerceIn(0f, 1f)
     }
 
     private fun openConsole() {
         if (consolePanel != null) return
         optionsPanel?.dismiss()
+        scenePanel?.dismiss()
         setChromeVisible(false)
         consolePanel = ConsolePanel(this, mView!!).apply {
             onDismiss = {
