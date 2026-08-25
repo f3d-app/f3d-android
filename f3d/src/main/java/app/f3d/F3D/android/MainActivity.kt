@@ -29,6 +29,7 @@ class MainActivity : AppCompatActivity() {
     private var optionsSheet: View? = null
     private var addButton: FloatingActionButton? = null
     private var bottomAppBar: BottomAppBar? = null
+    private var sheetsOpen = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -47,10 +48,10 @@ class MainActivity : AppCompatActivity() {
 
         optionsSheet = findViewById(R.id.optionsSheet)
         optionsPanel = OptionsPanel(this, mView!!, optionsSheet!!).apply {
-            onSlideOffset = { updateCradle() }
+            onSlideOffset = { onSheetSlide() }
         }
         scenePanel = ScenePanel(this, mView!!, findViewById(R.id.sceneSheet)).apply {
-            onSlideOffset = { updateCradle() }
+            onSlideOffset = { onSheetSlide() }
         }
         keepSheetAboveBar()
         keepAnimControlsAboveFab()
@@ -145,6 +146,16 @@ class MainActivity : AppCompatActivity() {
                 params.bottomMargin = inset
                 host.post { host.requestLayout() }
             }
+        }
+    }
+
+    private fun onSheetSlide() {
+        updateCradle()
+
+        val open = optionsPanel?.isOpen == true || scenePanel?.isOpen == true
+        if (open != sheetsOpen) {
+            sheetsOpen = open
+            animationController?.setHiddenForSheet(open)
         }
     }
 
