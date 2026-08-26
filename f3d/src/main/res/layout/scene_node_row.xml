@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/nodeRow"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="?attr/selectableItemBackground"
+    android:gravity="center_vertical"
+    android:minHeight="44dp"
+    android:paddingStart="12dp"
+    android:paddingEnd="12dp">
+
+    <ImageView
+        android:id="@+id/nodeChevron"
+        android:layout_width="24dp"
+        android:layout_height="24dp"
+        android:contentDescription="@string/scene_expand"
+        app:srcCompat="@drawable/ic_baseline_chevron_right_24"
+        app:tint="@color/log_debug" />
+
+    <TextView
+        android:id="@+id/nodeLabel"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="4dp"
+        android:layout_weight="1"
+        android:ellipsize="middle"
+        android:maxLines="1"
+        android:textColor="@color/white"
+        android:textSize="15sp" />
+
+    <ImageButton
+        android:id="@+id/nodeVisibility"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:contentDescription="@string/scene_toggle_visibility"
+        android:padding="8dp"
+        app:srcCompat="@drawable/ic_baseline_visibility_24"
+        app:tint="@color/white" />
+
+</LinearLayout>

@@ -26,6 +26,7 @@ class AnimationController(private val view: MainView, root: View) {
 
     private var hasAnimation = false
     private var hiddenForChrome = false
+    private var hiddenForSheet = false
     private var names: List<String> = emptyList()
     private var activeIndex = 0
     private var speedIndex = DEFAULT_SPEED_INDEX
@@ -78,6 +79,16 @@ class AnimationController(private val view: MainView, root: View) {
     /** Hides the controls while another surface (e.g. the console) takes over the screen. */
     fun setHiddenForChrome(hidden: Boolean) {
         hiddenForChrome = hidden
+        if (hidden) {
+            cancelHide()
+            applyVisibility()
+        } else {
+            keepAwake()
+        }
+    }
+
+    fun setHiddenForSheet(hidden: Boolean) {
+        hiddenForSheet = hidden
         if (hidden) {
             cancelHide()
             applyVisibility()
@@ -166,7 +177,7 @@ class AnimationController(private val view: MainView, root: View) {
 
     private fun scheduleHide() {
         handler.removeCallbacks(hideRunnable)
-        if (autoHideEnabled && hasAnimation && !hiddenForChrome) {
+        if (autoHideEnabled && hasAnimation && !hiddenForChrome && !hiddenForSheet) {
             handler.postDelayed(hideRunnable, HIDE_DELAY_MS)
         }
     }
@@ -199,7 +210,7 @@ class AnimationController(private val view: MainView, root: View) {
     private fun applyVisibility() {
         val show = hasAnimation && !hiddenForChrome && (controlsShown || !autoHideEnabled)
         fadeBar(infoBar, show)
-        fadeBar(controlBar, show)
+        fadeBar(controlBar, show && !hiddenForSheet)
     }
 
     private fun fadeBar(bar: View, show: Boolean) {

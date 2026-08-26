@@ -1,21 +1,20 @@
 package app.f3d.F3D.android
 
+import android.annotation.SuppressLint
 import android.app.Dialog
 import android.content.Context
-import android.text.SpannableStringBuilder
-import android.text.Spanned
-import android.text.style.ForegroundColorSpan
 import android.view.LayoutInflater
 import android.view.View
-import android.view.ViewTreeObserver
+import android.view.ViewGroup
 import android.view.WindowManager
 import android.view.inputmethod.EditorInfo
 import android.widget.ArrayAdapter
 import android.widget.AutoCompleteTextView
 import android.widget.ImageButton
-import android.widget.ScrollView
 import android.widget.TextView
 import androidx.appcompat.view.ContextThemeWrapper
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import app.f3d.F3D.Log
 import app.f3d.F3D.android.Utils.ConsoleLog
 import com.google.android.material.chip.Chip
@@ -26,9 +25,10 @@ class ConsolePanel(baseContext: Context, private val view: MainView) {
     var onDismiss: (() -> Unit)? = null
 
     private var dialog: Dialog? = null
-    private var scroll: ScrollView? = null
-    private var text: TextView? = null
+    private var layoutManager: LinearLayoutManager? = null
     private var empty: TextView? = null
+
+    private val adapter = LogAdapter()
 
     private var stickToBottom = true
 
@@ -42,12 +42,16 @@ class ConsolePanel(baseContext: Context, private val view: MainView) {
     fun show() {
         val root = LayoutInflater.from(context).inflate(R.layout.console_panel, null)
 
-        scroll = root.findViewById(R.id.consoleScroll)
-        text = root.findViewById(R.id.consoleText)
         empty = root.findViewById(R.id.consoleEmpty)
-        scroll?.setOnScrollChangeListener { _, _, _, _, _ ->
-            val sv = scroll ?: return@setOnScrollChangeListener
-            stickToBottom = sv.height > 0 && !sv.canScrollVertically(1)
+        layoutManager = LinearLayoutManager(context)
+        root.findViewById<RecyclerView>(R.id.consoleList).apply {
+            layoutManager = this@ConsolePanel.layoutManager
+            adapter = this@ConsolePanel.adapter
+            addOnScrollListener(object : RecyclerView.OnScrollListener() {
+                override fun onScrolled(list: RecyclerView, dx: Int, dy: Int) {
+                    stickToBottom = !list.canScrollVertically(1)
+                }
+            })
         }
         bindFilters(root)
 
@@ -125,36 +129,38 @@ class ConsolePanel(baseContext: Context, private val view: MainView) {
             setText(if (all.isEmpty()) R.string.console_empty else R.string.console_empty_filtered)
         }
 
-        val sv = scroll ?: return
         val followTail = !keepScrollPosition && stickToBottom
-        text?.text = render(entries)
-        if (followTail) {
-            sv.viewTreeObserver.addOnPreDrawListener(object : ViewTreeObserver.OnPreDrawListener {
-                override fun onPreDraw(): Boolean {
-                    sv.viewTreeObserver.removeOnPreDrawListener(this)
-                    sv.scrollTo(0, text?.height ?: 0)
-                    return true
-                }
-            })
+        adapter.submit(entries)
+        if (followTail && entries.isNotEmpty()) {
+            layoutManager?.scrollToPositionWithOffset(entries.lastIndex, 0)
         }
     }
 
-    private fun render(entries: List<ConsoleLog.Entry>): CharSequence {
-        val out = SpannableStringBuilder()
-        entries.forEachIndexed { index, entry ->
-            val start = out.length
-            out.append(entry.message)
-            if (index < entries.lastIndex) {
-                out.append('\n')
-            }
-            out.setSpan(
-                ForegroundColorSpan(context.getColor(colorFor(entry.level))),
-                start,
-                out.length,
-                Spanned.SPAN_EXCLUSIVE_EXCLUSIVE,
-            )
+    private inner class LogAdapter : RecyclerView.Adapter<LineHolder>() {
+        private var entries: List<ConsoleLog.Entry> = emptyList()
+
+        fun submit(newEntries: List<ConsoleLog.Entry>) {
+            entries = newEntries
+            notifyDataSetChanged()
         }
-        return out
+
+        override fun getItemCount(): Int = entries.size
+
+        override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): LineHolder =
+            LineHolder(
+                LayoutInflater.from(parent.context)
+                    .inflate(R.layout.console_log_row, parent, false) as TextView
+            )
+
+        override fun onBindViewHolder(holder: LineHolder, position: Int) =
+            holder.bind(entries[position])
+    }
+
+    private inner class LineHolder(private val line: TextView) : RecyclerView.ViewHolder(line) {
+        fun bind(entry: ConsoleLog.Entry) {
+            line.text = entry.message
+            line.setTextColor(context.getColor(colorFor(entry.level)))
+        }
     }
 
     private fun colorFor(level: Log.VerboseLevel): Int = when (level) {

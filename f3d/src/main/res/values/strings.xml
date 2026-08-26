@@ -19,6 +19,23 @@
     <string name="animation_speed">Playback speed</string>
     <string name="animation_autohide">Auto-hide controls</string>
     <string name="animation_locked">Keep controls visible</string>
+    <string name="scene">Scene</string>
+    <string name="scene_panel">Scene panel</string>
+    <string name="scene_empty">No file loaded.</string>
+    <string name="scene_expand">Expand or collapse</string>
+    <string name="scene_toggle_visibility">Toggle visibility</string>
+    <plurals name="scene_info_actors">
+        <item quantity="one">%s actor</item>
+        <item quantity="other">%s actors</item>
+    </plurals>
+    <plurals name="scene_info_points">
+        <item quantity="one">%s point</item>
+        <item quantity="other">%s points</item>
+    </plurals>
+    <plurals name="scene_info_cells">
+        <item quantity="one">%s cell</item>
+        <item quantity="other">%s cells</item>
+    </plurals>
     <string name="options_unavailable">Options unavailable</string>
     <string name="options">Options</string>
     <string name="reset">Reset</string>

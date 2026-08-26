@@ -100,23 +100,13 @@
         android:layout_height="0dp"
         android:layout_weight="1">
 
-        <ScrollView
-            android:id="@+id/consoleScroll"
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/consoleList"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:paddingHorizontal="16dp"
             android:paddingVertical="8dp"
-            android:scrollbars="vertical">
-
-            <app.f3d.F3D.android.Utils.NonAutoScrollTextView
-                android:id="@+id/consoleText"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:fontFamily="monospace"
-                android:textIsSelectable="true"
-                android:textSize="12sp" />
-
-        </ScrollView>
+            android:scrollbars="vertical" />
 
         <TextView
             android:id="@+id/consoleEmpty"

@@ -4,6 +4,7 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.net.Uri
 import android.opengl.GLSurfaceView
+import android.provider.OpenableColumns
 import android.view.MotionEvent
 import android.view.ScaleGestureDetector
 import android.view.ScaleGestureDetector.SimpleOnScaleGestureListener
@@ -16,8 +17,35 @@ import app.f3d.F3D.android.Utils.OptionWidget
 import app.f3d.F3D.android.PanGestureDetector.OnPanGestureListener
 import app.f3d.F3D.android.RotateGestureDetector.OnRotateGestureListener
 import com.google.android.material.snackbar.Snackbar
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
 import javax.microedition.khronos.egl.EGLConfig
 import javax.microedition.khronos.opengles.GL10
+
+data class SceneNode(
+    val id: Int,
+    val parentId: Int,
+    val level: Int,
+    val label: String,
+    val visible: Boolean,
+    val hasChildren: Boolean,
+    val collapsed: Boolean,
+)
+
+data class SceneInfo(
+    val actors: Int,
+    val points: Long,
+    val cells: Long,
+)
+
+data class SceneSnapshot(
+    val info: SceneInfo,
+    val nodes: List<SceneNode>,
+) {
+    companion object {
+        val EMPTY = SceneSnapshot(SceneInfo(0, 0, 0), emptyList())
+    }
+}
 
 /** Snapshot of the loaded scene's animation state. */
 data class AnimationInfo(
@@ -37,6 +65,10 @@ class MainView(context: Context) : GLSurfaceView(context) {
     private val mPanDetector: PanGestureDetector
     private val mRotateDetector: RotateGestureDetector
     private var mActiveUri: Uri? = null
+    private var mActiveFileName: String? = null
+
+    var loadedFileName: String? = null
+        private set
 
     private var animAvailable = 0
     private var animMin = 0.0
@@ -59,6 +91,8 @@ class MainView(context: Context) : GLSurfaceView(context) {
 
     var onViewportTouch: (() -> Unit)? = null
 
+    var onSceneLoaded: (() -> Unit)? = null
+
     init {
         start()
 
@@ -67,6 +101,23 @@ class MainView(context: Context) : GLSurfaceView(context) {
         this.mScaleDetector = ScaleGestureDetector(context, ScaleListener())
         this.mPanDetector = PanGestureDetector(PanListener())
         this.mRotateDetector = RotateGestureDetector(RotateListener())
+    }
+
+    /**
+     * Close the engine, which owns native resources a garbage collected view never releases.
+     * Called while the rendering thread is still alive: closing needs its GL context, so the
+     * caller waits for the event to run rather than firing and forgetting.
+     */
+    fun destroyEngine() {
+        val latch = CountDownLatch(1)
+        queueEvent {
+            mEngine?.close()
+            mEngine = null
+            latch.countDown()
+        }
+        if (!latch.await(ENGINE_CLOSE_TIMEOUT_S, TimeUnit.SECONDS)) {
+            Log.warn("Engine: the rendering thread did not close it in time")
+        }
     }
 
     fun start() {
@@ -92,6 +143,11 @@ class MainView(context: Context) : GLSurfaceView(context) {
                             this@MainView.mEngine!!.window.camera.resetToBounds()
                             refreshAnimationState()
                             mActiveUri = null
+
+                            post {
+                                loadedFileName = mActiveFileName
+                                onSceneLoaded?.invoke()
+                            }
                         }
                     }
             } catch (e: Exception) {
@@ -112,14 +168,16 @@ class MainView(context: Context) : GLSurfaceView(context) {
 
     private inner class Renderer : GLSurfaceView.Renderer {
         override fun onDrawFrame(gl: GL10?) {
+            val engine = this@MainView.mEngine ?: return
+
             this@MainView.loadFile()
             this@MainView.advanceAnimation()
 
-            this@MainView.mEngine!!.window.render()
+            engine.window.render()
         }
 
         override fun onSurfaceChanged(gl: GL10?, width: Int, height: Int) {
-            this@MainView.mEngine!!.window.setSize(width, height)
+            this@MainView.mEngine?.window?.setSize(width, height)
             this@MainView.requestRender()
         }
 
@@ -158,6 +216,23 @@ class MainView(context: Context) : GLSurfaceView(context) {
     fun updateActiveUri(uri: Uri?) {
         // Use the new file path as needed in MainView
         mActiveUri = uri
+        mActiveFileName = uri?.let { displayName(it) }
+    }
+
+    private fun displayName(uri: Uri): String? {
+        try {
+            context.contentResolver
+                .query(uri, arrayOf(OpenableColumns.DISPLAY_NAME), null, null, null)
+                ?.use { cursor ->
+                    val column = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)
+                    if (column >= 0 && cursor.moveToFirst()) {
+                        return cursor.getString(column)
+                    }
+                }
+        } catch (e: Exception) {
+            Log.debug("Scene: could not read the file name, ${e.message}")
+        }
+        return uri.lastPathSegment
     }
 
     fun renderToImage(): Image {
@@ -283,6 +358,42 @@ class MainView(context: Context) : GLSurfaceView(context) {
                 }
                 requestRender()
             }
+        }
+    }
+
+    fun snapshotScene(onReady: (SceneSnapshot) -> Unit) {
+        val engine = mEngine
+        if (engine == null) {
+            onReady(SceneSnapshot.EMPTY)
+            return
+        }
+        queueEvent {
+            val snapshot = try {
+                val info = engine.scene.sceneInfo
+                SceneSnapshot(
+                    SceneInfo(info.numberOfActors, info.numberOfPoints, info.numberOfCells),
+                    engine.scene.sceneHierarchy.map {
+                        SceneNode(
+                            it.id, it.parentId, it.level, it.label,
+                            it.visible, it.hasChildren, it.collapsed,
+                        )
+                    },
+                )
+            } catch (_: Exception) {
+                SceneSnapshot.EMPTY
+            }
+            post { onReady(snapshot) }
+        }
+    }
+
+    fun setNodeVisibility(nodeId: Int, visible: Boolean) {
+        queueEvent {
+            try {
+                mEngine?.scene?.setNodeVisibility(nodeId, visible)
+            } catch (e: Exception) {
+                Log.error("Scene: ${e.message}")
+            }
+            requestRender()
         }
     }
 
@@ -521,5 +632,7 @@ class MainView(context: Context) : GLSurfaceView(context) {
         private const val RATIO_INCREMENT = 0.05
 
         private const val PROGRESS_INTERVAL_NANOS = 33_000_000L
+
+        private const val ENGINE_CLOSE_TIMEOUT_S = 2L
     }
 }
