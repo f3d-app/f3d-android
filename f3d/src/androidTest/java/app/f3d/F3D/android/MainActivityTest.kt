@@ -27,6 +27,7 @@ import androidx.test.ext.junit.rules.ActivityScenarioRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import app.f3d.F3D.Image
+import app.f3d.F3D.android.Utils.ConsoleLog
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import java.io.File
 import java.util.concurrent.CountDownLatch
@@ -318,9 +319,12 @@ class MainActivityTest {
 
         // Plugin loading happens before the console is ever opened, so its output is only there
         // if the log forwarder was installed early enough and the buffer survives independently.
-        onView(withId(R.id.consoleText))
-            .inRoot(isDialog())
-            .check(matches(withSubstring("Loading plugin")))
+        // Asserted on the buffer rather than on screen: the console shows its tail, and those
+        // lines scrolled out long ago.
+        assertTrue(
+            "Plugin loading was not captured",
+            ConsoleLog.snapshot().any { it.message.contains("Loading plugin") },
+        )
 
         // A rejected command reports itself through the log, which is what surfaces it here.
         onView(withId(R.id.consoleInput))
@@ -328,9 +332,9 @@ class MainActivityTest {
             .perform(typeText("not_a_command"), closeSoftKeyboard())
         onView(withId(R.id.consoleSendButton)).inRoot(isDialog()).perform(click())
         Thread.sleep(1000)
-        onView(withId(R.id.consoleText))
+        onView(withSubstring("is not recognized"))
             .inRoot(isDialog())
-            .check(matches(withSubstring("is not recognized")))
+            .check(matches(isDisplayed()))
 
         onView(withId(R.id.consoleClearButton)).inRoot(isDialog()).perform(click())
         Thread.sleep(500)
