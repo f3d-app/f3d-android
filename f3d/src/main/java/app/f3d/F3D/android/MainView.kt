@@ -294,7 +294,7 @@ class MainView(context: Context) : GLSurfaceView(context) {
                 if (opts.hasDomain(spec.name) && opts.getDomainStyle(spec.name) == Options.DomainStyle.ENUM) {
                     OptionWidget.Enum(
                         spec,
-                        opts.getEnumDomain(spec.name),
+                        opts.getEnumDomainAsString(spec.name),
                         if (isSet) opts.getAsStringRepresentation(spec.name) else "",
                         isSet
                     )
