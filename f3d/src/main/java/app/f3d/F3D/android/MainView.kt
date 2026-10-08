@@ -422,31 +422,31 @@ class MainView(context: Context) : GLSurfaceView(context) {
         activeAnimation = 0
         lastFrameNanos = 0L
         animAvailable = try {
-            scene.availableAnimations()
+            scene.animation.count()
         } catch (_: Exception) {
             0
         }
         if (animAvailable > 0) {
             val range = try {
-                scene.animationTimeRange()
+                scene.animation.timeRange
             } catch (_: Exception) {
                 doubleArrayOf(0.0, 0.0)
             }
             animMin = range.getOrElse(0) { 0.0 }
             animMax = range.getOrElse(1) { 0.0 }
             animNames = try {
-                scene.animationNames
+                scene.animation.names
             } catch (_: Exception) {
                 emptyList()
             }
             animKeyFrames = try {
-                scene.animationKeyFrames
+                scene.animation.keyFrames
             } catch (_: Exception) {
                 DoubleArray(0)
             }
             currentTime = animMin
             try {
-                scene.loadAnimationTime(currentTime)
+                scene.animation.loadTime(currentTime)
             } catch (_: Exception) {
             }
         } else {
@@ -479,7 +479,7 @@ class MainView(context: Context) : GLSurfaceView(context) {
                 animMin
             }
             try {
-                mEngine?.scene?.loadAnimationTime(currentTime)
+                mEngine?.scene?.animation?.loadTime(currentTime)
             } catch (_: Exception) {
             }
         }
@@ -510,7 +510,7 @@ class MainView(context: Context) : GLSurfaceView(context) {
         currentTime = animMin + fraction.coerceIn(0.0, 1.0) * (animMax - animMin)
         lastFrameNanos = 0L
         try {
-            mEngine?.scene?.loadAnimationTime(currentTime)
+            mEngine?.scene?.animation?.loadTime(currentTime)
         } catch (_: Exception) {
         }
         postProgress()
@@ -531,13 +531,13 @@ class MainView(context: Context) : GLSurfaceView(context) {
         activeAnimation = index
         try {
             engine.options.setAsIntVector("scene.animation.indices", intArrayOf(index))
-            val range = engine.scene.animationTimeRange()
+            val range = engine.scene.animation.timeRange
             animMin = range.getOrElse(0) { 0.0 }
             animMax = range.getOrElse(1) { 0.0 }
-            animKeyFrames = engine.scene.animationKeyFrames
+            animKeyFrames = engine.scene.animation.keyFrames
             currentTime = animMin
             lastFrameNanos = 0L
-            engine.scene.loadAnimationTime(currentTime)
+            engine.scene.animation.loadTime(currentTime)
         } catch (_: Exception) {
         }
         publishAnimationInfo(resetPlayback = false)
