@@ -1,0 +1,9 @@
+- Fixed a crash with Android 16+
+- Added more file support (plugins: usd, hdf, vdb)
+- Fixed many rendering issues
+- Added support for GPU skinning/morphing
+- Added an option panel
+- Added a console widget
+- Added animation support
+- Added scene hierarchy and metadata widget
+- Added a donation button
