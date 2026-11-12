@@ -2,9 +2,6 @@ plugins {
     id 'com.android.application'
 }
 
-import groovy.json.JsonSlurper
-def lockFile = new JsonSlurper().parse(file("$rootDir/jniLibs-lock.json"))
-
 android {
     compileSdk = 36
 
@@ -12,8 +9,13 @@ android {
         applicationId = "app.f3d.F3D.android"
         minSdk = 28
         targetSdk = 36
-        versionCode = 1
-        versionName = lockFile.version
+
+        // Version code follows the format MAJOR*10000 + MINOR*100 + PATCH*100 + optional EXTRA
+        // Examples: v4.0.1   -> 4000100
+        //           v4.0.1-1 -> 4000101
+        // The extra version should be avoided except if an Android-specific fix is needed
+        versionCode = 4000101
+        versionName = "v4.0.1-1"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         testInstrumentationRunnerArguments["additionalTestOutputDir"] = "/storage/emulated/0/Android/data/app.f3d.F3D.android/files"
@@ -60,7 +62,7 @@ androidComponents {
     onVariants(selector().all()) { variant ->
         variant.outputs.forEach { output ->
             def abi = output.filters.find { it.filterType.name() == "ABI" }?.identifier ?: "universal"
-            output.outputFileName.set("f3d-android-${lockFile.version}-${abi}.apk")
+            output.outputFileName.set(output.versionName.map { "f3d-android-${it}-${abi}.apk" })
         }
     }
 }
