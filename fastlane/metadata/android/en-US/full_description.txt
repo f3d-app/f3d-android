@@ -1,0 +1,3 @@
+F3D is a fast and minimalist 3D viewer application.
+Entirely free and open-source, it supports many file formats, from digital content to scienfific datasets, including glTF, USD, STL, STEP, PLY, OBJ, FBX, and Alembic.
+It can show animations, and provide many rendering and texturing options including real-time physically based rendering.
