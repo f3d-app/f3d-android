@@ -26,3 +26,32 @@ class "HydraGenerativeProceduralAPI" (
     )
 }
 
+class "HydraRenderPassAPI" (
+    customData = {
+        string userDocBrief = "Provides Hydra-specific properties for UsdRenderPass."
+    }
+)
+{
+    uniform token hydra:rendererName (
+        customData = {
+            string userDocBrief = """The name of the Hydra renderer to use if the user does
+        not otherwise specify one to the application."""
+        }
+    )
+}
+
+class "HydraPrimAPI" (
+    customData = {
+        string userDocBrief = "Provides Hydra-specific prim settings."
+    }
+)
+{
+    uniform bool hydra:expandInstances = 0 (
+        customData = {
+            string userDocBrief = """This property can be used to de-instance the Hydra scene
+        index representation of prims that were otherwise instanceable
+        in the USD scenegraph."""
+        }
+    )
+}
+

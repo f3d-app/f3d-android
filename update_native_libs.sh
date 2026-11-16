@@ -170,6 +170,7 @@ for arch in "${ARCHS[@]}"; do
         -DCMAKE_MODULE_PATH=/depends/lib/cmake/OpenVDB \
         -DF3D_MODULE_EXR=ON \
         -DF3D_MODULE_CLIP=OFF \
+        -DF3D_MODULE_MESHOPT=ON \
         -DF3D_MODULE_UI=OFF \
         -DF3D_MODULE_WEBP=ON \
         -DF3D_PLUGINS_STATIC_BUILD=ON \

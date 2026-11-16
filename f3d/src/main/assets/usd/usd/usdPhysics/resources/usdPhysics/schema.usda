@@ -202,7 +202,14 @@ class "PhysicsMassAPI"
 
     doc = """Defines explicit mass properties (mass, density, inertia etc.).        
     MassAPI can be applied to any object that has a PhysicsCollisionAPI or
-    a PhysicsRigidBodyAPI."""
+    a PhysicsRigidBodyAPI, and takes effect only while that collider or rigid
+    body is enabled. A prim whose physics:collisionEnabled or
+    physics:rigidBodyEnabled is false is not simulated, and its MassAPI is
+    ignored.
+
+    This applies only to the prim the MassAPI is applied to. Enabled colliders
+    beneath it are unaffected and still contribute their mass to the nearest
+    enabled rigid body above them."""
 
     inherits = </APISchemaBase>
 )
@@ -275,12 +282,16 @@ class "PhysicsCollisionAPI"
     customData = {
         string className = "CollisionAPI"
     }
-    doc = """Applies collision attributes to a UsdGeomXformable prim. If a 
-    simulation is running, this geometry will collide with other geometries that 
+    doc = """Applies collision attributes to a UsdGeomXformable prim. If a
+    simulation is running, this geometry will collide with other geometries that
     have PhysicsCollisionAPI applied. If any prim in the parent hierarchy has
     the RigidBodyAPI applied, the collider is considered a part of the closest
     ancestor body. If there is no body in the parent hierarchy, this collider
-    is considered to be static."""
+    is considered to be static.
+
+    Note: UsdGeomPlane colliders may only be used as static or kinematic
+    colliders. A plane collider attached to a simulated (non-kinematic) rigid
+    body is not supported."""
 
     inherits = </APISchemaBase>
 )
