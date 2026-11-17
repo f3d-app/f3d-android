@@ -209,7 +209,7 @@ for arch in "${ARCHS[@]}"; do
         exit 1
     fi
 
-    JNILIBS_DIR="$SCRIPT_DIR/f3d/src/main/jniLibs/$arch"
+    JNILIBS_DIR="$SCRIPT_DIR/library/src/main/jniLibs/$arch"
     mkdir -p "$JNILIBS_DIR"
     cp "$SO_SRC" "$JNILIBS_DIR/libf3d-java.so"
 
@@ -226,7 +226,7 @@ if [[ ! -f "$JAR_SRC" ]]; then
     exit 1
 fi
 
-LIBS_DIR="$SCRIPT_DIR/f3d/libs"
+LIBS_DIR="$SCRIPT_DIR/library/libs"
 mkdir -p "$LIBS_DIR"
 cp "$JAR_SRC" "$LIBS_DIR/f3d.jar"
 
@@ -246,7 +246,7 @@ done
 
 if [[ -n "$USD_SRC_ARCH" ]]; then
     USD_PLUGINS_SRC="$CLONE_DIR/build-${USD_SRC_ARCH}/lib/usd"
-    DATA_DIR="$SCRIPT_DIR/f3d/src/main/assets"
+    DATA_DIR="$SCRIPT_DIR/library/src/main/assets"
     mkdir -p "$DATA_DIR"
     cp -r "$USD_PLUGINS_SRC" "$DATA_DIR/usd"
     echo "Copied USD plugins from build-${USD_SRC_ARCH} -> assets/usd/"
