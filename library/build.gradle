@@ -15,18 +15,17 @@ android {
         jniLibs.keepDebugSymbols.add("**/libf3d-java.so")
     }
 
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
+    }
+
     namespace = 'app.f3d.F3D.library'
 }
 
 dependencies {
     // Java bindings, exposed to consumers of the library
     api files('libs/f3d.jar')
-}
-
-java {
-    toolchain {
-        languageVersion = JavaLanguageVersion.of(17)
-    }
 }
 
 def libf3dVersion = providers.gradleProperty('libf3dVersion')
