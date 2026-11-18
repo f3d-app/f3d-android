@@ -1,6 +1,5 @@
 plugins {
     id 'com.android.library'
-    id 'com.vanniktech.maven.publish'
 }
 
 android {
@@ -30,39 +29,44 @@ java {
     }
 }
 
-mavenPublishing {
-    publishToMavenCentral()
+def libf3dVersion = providers.gradleProperty('libf3dVersion')
+if (libf3dVersion.isPresent()) {
+    apply plugin: 'com.vanniktech.maven.publish'
 
-    // Signing is only required when publishing, local builds do not need any key
-    if (providers.gradleProperty('signingInMemoryKey').isPresent()) {
-        signAllPublications()
-    }
+    mavenPublishing {
+        publishToMavenCentral()
 
-    coordinates('app.f3d', 'libf3d', providers.gradleProperty('libf3dVersion').getOrElse('1.0.0'))
-
-    pom {
-        name = 'F3D'
-        description = 'F3D native library with its Java bindings for Android'
-        url = 'https://f3d.app'
-
-        licenses {
-            license {
-                name = 'BSD-3-Clause'
-                url = 'https://opensource.org/license/bsd-3-clause'
-            }
+        // Signing is only required when publishing, local builds do not need any key
+        if (providers.gradleProperty('signingInMemoryKey').isPresent()) {
+            signAllPublications()
         }
 
-        developers {
-            developer {
-                id = 'f3d-app'
-                name = 'F3D-APP Foundation'
-                url = 'https://www.f3d.app/'
-            }
-        }
+        coordinates('app.f3d', 'libf3d', libf3dVersion.get())
 
-        scm {
-            url = 'https://github.com/f3d-app/f3d-android'
-            connection = 'scm:git:https://github.com/f3d-app/f3d-android.git'
+        pom {
+            name = 'F3D'
+            description = 'F3D native library with its Java bindings for Android'
+            url = 'https://f3d.app'
+
+            licenses {
+                license {
+                    name = 'BSD-3-Clause'
+                    url = 'https://opensource.org/license/bsd-3-clause'
+                }
+            }
+
+            developers {
+                developer {
+                    id = 'f3d-app'
+                    name = 'F3D-APP Foundation'
+                    url = 'https://www.f3d.app/'
+                }
+            }
+
+            scm {
+                url = 'https://github.com/f3d-app/f3d-android'
+                connection = 'scm:git:https://github.com/f3d-app/f3d-android.git'
+            }
         }
     }
 }
