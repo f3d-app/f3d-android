@@ -14,8 +14,8 @@ android {
         // Examples: v4.0.1   -> 4000100
         //           v4.0.1-1 -> 4000101
         // The extra version should be avoided except if an Android-specific fix is needed
-        versionCode = 4000101
-        versionName = "v4.0.1-1"
+        versionCode = 4000102
+        versionName = "v4.0.1-2"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         testInstrumentationRunnerArguments["additionalTestOutputDir"] = "/storage/emulated/0/Android/data/app.f3d.F3D.android/files"
@@ -74,7 +74,12 @@ dependencies {
     implementation 'androidx.constraintlayout:constraintlayout:2.2.2'
     implementation 'androidx.recyclerview:recyclerview:1.4.0'
     implementation 'com.google.android.material:material:1.14.0'
-    implementation files('libs/f3d.jar')
+
+    if (providers.gradleProperty('f3d.use.local.library').getOrElse('false') == 'true') {
+        implementation project(':library')
+    } else {
+        implementation 'app.f3d:libf3d:4.0.1-2'
+    }
 
     // For UI Tests
     androidTestImplementation 'androidx.test.ext:junit:1.3.0'

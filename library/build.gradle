@@ -1,0 +1,72 @@
+plugins {
+    id 'com.android.library'
+}
+
+android {
+    compileSdk = 36
+
+    defaultConfig {
+        minSdk = 28
+        consumerProguardFiles 'consumer-rules.pro'
+    }
+
+    packaging {
+        // Remove warning "Unable to strip the following libraries, packaging them as they are:"
+        jniLibs.keepDebugSymbols.add("**/libf3d-java.so")
+    }
+
+    namespace = 'app.f3d.F3D.library'
+}
+
+dependencies {
+    // Java bindings, exposed to consumers of the library
+    api files('libs/f3d.jar')
+}
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(17)
+    }
+}
+
+def libf3dVersion = providers.gradleProperty('libf3dVersion')
+if (libf3dVersion.isPresent()) {
+    apply plugin: 'com.vanniktech.maven.publish'
+
+    mavenPublishing {
+        publishToMavenCentral()
+
+        // Signing is only required when publishing, local builds do not need any key
+        if (providers.gradleProperty('signingInMemoryKey').isPresent()) {
+            signAllPublications()
+        }
+
+        coordinates('app.f3d', 'libf3d', libf3dVersion.get())
+
+        pom {
+            name = 'F3D'
+            description = 'F3D native library with its Java bindings for Android'
+            url = 'https://f3d.app'
+
+            licenses {
+                license {
+                    name = 'BSD-3-Clause'
+                    url = 'https://opensource.org/license/bsd-3-clause'
+                }
+            }
+
+            developers {
+                developer {
+                    id = 'f3d-app'
+                    name = 'F3D-APP Foundation'
+                    url = 'https://www.f3d.app/'
+                }
+            }
+
+            scm {
+                url = 'https://github.com/f3d-app/f3d-android'
+                connection = 'scm:git:https://github.com/f3d-app/f3d-android.git'
+            }
+        }
+    }
+}
