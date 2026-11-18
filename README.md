@@ -4,9 +4,9 @@ Android application built on top of [F3D](https://github.com/f3d-app/f3d).
 
 ## Prerequisites
 
-- Docker (for building native libraries)
 - Android SDK >= 34
-- Java 17
+- Java >= 17
+- Optionally, Docker (for building native libraries)
 
 > [!NOTE]
 > While only tested on Android 14+ versions, the generated .apk can be installed on Android >= 9 (API level 28).
@@ -55,6 +55,16 @@ Use the Gradle wrapper to build:
 
 # Release build
 ./gradlew assembleRelease
+```
+
+If you want to use the Maven Central libf3d package instead of local native libraries, build using the following option:
+
+```bash
+# Debug build
+./gradlew assembleDebug -Pf3d.use.local.library=false
+
+# Release build
+./gradlew assembleRelease -Pf3d.use.local.library=false
 ```
 
 > [!NOTE]

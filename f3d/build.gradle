@@ -2,6 +2,13 @@ plugins {
     id 'com.android.application'
 }
 
+def supportedAbiCodesMap = [
+    "armeabi-v7a": 1,
+    "arm64-v8a": 2,
+    "x86": 3,
+    "x86_64": 4,
+]
+
 android {
     compileSdk = 36
 
@@ -14,8 +21,8 @@ android {
         // Examples: v4.0.1   -> 4000100
         //           v4.0.1-1 -> 4000101
         // The extra version should be avoided except if an Android-specific fix is needed
-        versionCode = 4000102
-        versionName = "v4.0.1-2"
+        versionCode = 4000103
+        versionName = "v4.0.1-3"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         testInstrumentationRunnerArguments["additionalTestOutputDir"] = "/storage/emulated/0/Android/data/app.f3d.F3D.android/files"
@@ -25,7 +32,7 @@ android {
         abi {
             enable = !gradle.startParameter.taskNames.any { it.toLowerCase().contains("bundle") }
             reset()
-            include "arm64-v8a", "armeabi-v7a", "x86_64", "x86"
+            include(supportedAbiCodesMap.keySet().toArray(new String[0]))
             universalApk = false
         }
     }
@@ -42,6 +49,11 @@ android {
     packagingOptions {
         // Remove warning "Unable to strip the following libraries, packaging them as they are:"
         jniLibs.keepDebugSymbols.add("**/libf3d-java.so")
+    }
+
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
     }
 
     buildTypes {
@@ -63,6 +75,9 @@ androidComponents {
         variant.outputs.forEach { output ->
             def abi = output.filters.find { it.filterType.name() == "ABI" }?.identifier ?: "universal"
             output.outputFileName.set(output.versionName.map { "f3d-android-${it}-${abi}.apk" })
+
+            def versionCode = output.versionCode.get()
+            output.versionCode.set(versionCode * 10 + (supportedAbiCodesMap[abi] ?: 0))
         }
     }
 }
@@ -78,6 +93,8 @@ dependencies {
     if (providers.gradleProperty('f3d.use.local.library').getOrElse('false') == 'true') {
         implementation project(':library')
     } else {
+        // we don't necessarily need to match the app version here
+        // but let's try to do so when our process will be stable
         implementation 'app.f3d:libf3d:4.0.1-2'
     }
 
@@ -85,10 +102,4 @@ dependencies {
     androidTestImplementation 'androidx.test.ext:junit:1.3.0'
     androidTestImplementation 'androidx.test:runner:1.7.0'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.7.0'
-}
-
-java {
-    toolchain {
-        languageVersion = JavaLanguageVersion.of(17)
-    }
 }
